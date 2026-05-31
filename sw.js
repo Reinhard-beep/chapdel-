@@ -1,7 +1,7 @@
 // Chapdel Logistics Service Worker
 // Version 1.0 - Enables offline use
 
-const CACHE_NAME = 'chapdel-v1';
+const CACHE_NAME = 'chapdel-v4'; // Updated - clears old cache
 const OFFLINE_URL = 'offline.html';
 
 const ASSETS_TO_CACHE = [
