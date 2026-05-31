@@ -242,7 +242,7 @@
 <!-- TOP BAR -->
 <div class="topbar">
   <a href="index.html" class="back-btn">← Nyuma</a>
-  <div class="topbar-logo">CHAPDEL<span> LOGISTICS</span></div>
+  <div style="display:flex;align-items:center;gap:8px;"><img src="logo.png" style="height:36px;width:36px;border-radius:50%;object-fit:cover;" alt="Chapdel"/><span style="font-family:Poppins,sans-serif;font-weight:900;font-size:1rem;color:#00e65b;">Chapdel<span style="color:#fff;"> Logistics</span></span></div>
   <div style="width:60px;"></div>
 </div>
 
@@ -381,6 +381,88 @@
       </div>
     </div>
 
+    <!-- PAYMENT SECTION -->
+    <div id="paymentSection" style="display:none; margin-bottom:16px;">
+      <div style="font-size:0.7rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#999;margin-bottom:10px;">💳 Chagua Njia ya Malipo</div>
+
+      <!-- PAYMENT OPTIONS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+
+        <!-- CRDB Lipa Hapa -->
+        <div class="pay-card" id="pay-crdb" onclick="selectPayment('crdb')" style="border:2px solid #e0e0e0;border-radius:14px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.2s;">
+          <div style="font-size:1.3rem;margin-bottom:4px;">🏦</div>
+          <div style="font-size:0.68rem;font-weight:800;color:#004b87;">CRDB</div>
+          <div style="font-size:0.62rem;color:#888;">Lipa Hapa</div>
+        </div>
+
+        <!-- M-Pesa -->
+        <div class="pay-card" id="pay-mpesa" onclick="selectPayment('mpesa')" style="border:2px solid #e0e0e0;border-radius:14px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.2s;">
+          <div style="font-size:1.3rem;margin-bottom:4px;">📱</div>
+          <div style="font-size:0.68rem;font-weight:800;color:#e4002b;">M-Pesa</div>
+          <div style="font-size:0.62rem;color:#888;">Vodacom</div>
+        </div>
+
+        <!-- Lipa Baadaye (Cash) -->
+        <div class="pay-card" id="pay-cash" onclick="selectPayment('cash')" style="border:2px solid #e0e0e0;border-radius:14px;padding:12px 8px;text-align:center;cursor:pointer;transition:all 0.2s;">
+          <div style="font-size:1.3rem;margin-bottom:4px;">💵</div>
+          <div style="font-size:0.68rem;font-weight:800;color:#333;">Taslimu</div>
+          <div style="font-size:0.62rem;color:#888;">Lipa Dereva</div>
+        </div>
+      </div>
+
+      <!-- CRDB DETAILS -->
+      <div id="crdb-details" style="display:none;background:linear-gradient(135deg,#004b87,#0066b3);border-radius:16px;padding:18px;margin-bottom:12px;color:#fff;">
+        <div style="font-size:0.72rem;font-weight:700;letter-spacing:1px;opacity:0.7;margin-bottom:8px;">🏦 CRDB BANK — LIPA HAPA</div>
+        <div style="font-size:0.78rem;opacity:0.8;margin-bottom:6px;">Lipa Namba:</div>
+        <div style="font-size:2rem;font-weight:900;letter-spacing:4px;margin-bottom:4px;">11812432</div>
+        <div style="font-size:0.82rem;font-weight:700;margin-bottom:12px;">REUBEN MARCEL CHABUKOMBE</div>
+        <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:10px;font-size:0.78rem;line-height:1.7;">
+          📲 <strong>Jinsi ya Kulipa:</strong><br/>
+          1. Fungua SimBanking au *150*03#<br/>
+          2. Chagua <strong>Lipa Bili</strong><br/>
+          3. Weka Namba: <strong>11812432</strong><br/>
+          4. Weka kiasi: <strong id="crdb-amount">TSh —</strong><br/>
+          5. Thibitisha na PIN yako ✅
+        </div>
+        <div style="margin-top:10px;background:rgba(255,255,255,0.1);border-radius:8px;padding:8px;text-align:center;">
+          <div style="font-size:0.7rem;opacity:0.7;">Inakubali:</div>
+          <div style="font-size:0.8rem;font-weight:700;margin-top:2px;">VISA · Mastercard · UnionPay · SimBanking</div>
+        </div>
+      </div>
+
+      <!-- MPESA DETAILS -->
+      <div id="mpesa-details" style="display:none;background:linear-gradient(135deg,#e4002b,#b30022);border-radius:16px;padding:18px;margin-bottom:12px;color:#fff;">
+        <div style="font-size:0.72rem;font-weight:700;letter-spacing:1px;opacity:0.7;margin-bottom:8px;">📱 M-PESA — VODACOM</div>
+        <div style="font-size:0.78rem;opacity:0.8;margin-bottom:6px;">Namba ya Kulipa:</div>
+        <div style="font-size:2rem;font-weight:900;letter-spacing:4px;margin-bottom:4px;">0762503883</div>
+        <div style="font-size:0.82rem;font-weight:700;margin-bottom:12px;">CHAPDEL LOGISTICS</div>
+        <div style="background:rgba(255,255,255,0.15);border-radius:10px;padding:10px;font-size:0.78rem;line-height:1.7;">
+          📲 <strong>Jinsi ya Kulipa:</strong><br/>
+          1. Piga <strong>*150*00#</strong> au fungua M-Pesa App<br/>
+          2. Chagua <strong>Tuma Pesa</strong><br/>
+          3. Weka Namba: <strong>0762503883</strong><br/>
+          4. Weka kiasi: <strong id="mpesa-amount">TSh —</strong><br/>
+          5. Weka PIN yako ✅
+        </div>
+        <div style="margin-top:10px;background:rgba(255,255,255,0.1);border-radius:8px;padding:8px;text-align:center;font-size:0.75rem;">
+          💡 Baada ya kulipa, screenshot ya uthibitisho itatumwa WhatsApp
+        </div>
+      </div>
+
+      <!-- CASH DETAILS -->
+      <div id="cash-details" style="display:none;background:linear-gradient(135deg,#1a4a1a,#2d6e2d);border-radius:16px;padding:18px;margin-bottom:12px;color:#fff;">
+        <div style="font-size:0.72rem;font-weight:700;letter-spacing:1px;opacity:0.7;margin-bottom:8px;">💵 LIPA TASLIMU</div>
+        <div style="font-size:0.95rem;font-weight:700;margin-bottom:8px;">Lipa Dereva Moja kwa Moja</div>
+        <div style="background:rgba(255,255,255,0.12);border-radius:10px;padding:10px;font-size:0.82rem;line-height:1.8;">
+          ✅ Hakuna malipo ya awali<br/>
+          🛵 Dereva anakuja kwako<br/>
+          💰 Lipa <strong id="cash-amount">TSh —</strong> ukifika<br/>
+          🤝 Bei iliyoonyeshwa ni ya mwisho
+        </div>
+      </div>
+
+    </div>
+
     <!-- CONFIRM BUTTONS -->
     <button class="confirm-btn" id="confirmBtn" onclick="confirmBooking()" disabled>
       <span>🛵</span> <span id="confirmBtnText">Weka Pickup na Dropoff Kwanza</span>
@@ -411,9 +493,10 @@
   <div class="modal">
     <div class="modal-icon">🎉</div>
     <h2>Ombi Limetumwa!</h2>
-    <p>Ombi lako limetumwa kwa Chapdel Logistics. Dereva atakuwasiliana nawe kupitia WhatsApp hivi karibuni!</p>
+    <p>Ombi lako limetumwa kwa Chapdel Logistics kupitia WhatsApp!</p>
     <div class="modal-order-id" id="orderIdDisplay">Order #CHP-0000</div>
-    <p style="font-size:0.8rem;color:#999;margin-bottom:16px;">Wastani wa kufika: dakika 5–10 🛵</p>
+    <div id="modal-payment-info" style="background:#f5f5f5;border-radius:10px;padding:12px;margin-bottom:16px;font-size:0.82rem;color:#444;text-align:left;line-height:1.8;"></div>
+    <p style="font-size:0.8rem;color:#999;margin-bottom:16px;">Wastani wa kufika: dakika 5-10 🛵</p>
     <button class="modal-close" onclick="closeModal()">✅ Sawa, Asante!</button>
   </div>
 </div>
@@ -707,6 +790,7 @@ function calculateFare() {
   document.getElementById('fareService').textContent = currentTab === 'ride' ? selectedService.charAt(0).toUpperCase() + selectedService.slice(1) : currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
   document.getElementById('fareTotal').textContent = 'TSh ' + fare.toLocaleString();
   document.getElementById('fareBox').classList.add('visible');
+  showPaymentSection();
   return fare;
 }
 
@@ -785,6 +869,20 @@ function sendWhatsApp(orderId) {
   const distEl = document.getElementById('fareDistance').textContent;
   const tab = currentTab === 'ride' ? '🛵 Bodaboda Ride' : currentTab === 'parcel' ? '📦 Parcel Delivery' : '⚡ Express Courier';
   const id = orderId || 'CHP-' + Math.floor(Math.random() * 9000 + 1000);
+  const payMethods = { crdb: '🏦 CRDB Lipa Hapa (11812432)', mpesa: '📱 M-Pesa (0762503883)', cash: '💵 Taslimu kwa Dereva' };
+  const payLabel = payMethods[selectedPayment] || '💵 Taslimu';
+
+  // Update modal payment info
+  const payInfo = document.getElementById('modal-payment-info');
+  if (payInfo) {
+    if (selectedPayment === 'crdb') {
+      payInfo.innerHTML = '🏦 <strong>Lipa CRDB:</strong> Namba 11812432<br/>Kiasi: <strong>' + fareEl + '</strong>';
+    } else if (selectedPayment === 'mpesa') {
+      payInfo.innerHTML = '📱 <strong>Lipa M-Pesa:</strong> 0762503883<br/>Kiasi: <strong>' + fareEl + '</strong>';
+    } else {
+      payInfo.innerHTML = '💵 <strong>Lipa Taslimu</strong> kwa dereva ukifika<br/>Kiasi: <strong>' + fareEl + '</strong>';
+    }
+  }
 
   let msg = `🛵 *OMBI JIPYA - CHAPDEL LOGISTICS*\n\n`;
   msg += `📋 *Order ID:* ${id}\n`;
@@ -792,7 +890,8 @@ function sendWhatsApp(orderId) {
   msg += `📍 *Pickup:* ${pickup}\n`;
   msg += `🏁 *Dropoff:* ${dropoff}\n\n`;
   msg += `📏 *Umbali:* ${distEl}\n`;
-  msg += `💰 *Bei:* ${fareEl}\n\n`;
+  msg += `💰 *Bei:* ${fareEl}\n`;
+  msg += `💳 *Malipo:* ${payLabel}\n\n`;
 
   if (currentTab === 'parcel') {
     const recipient = document.getElementById('recipientName').value;
@@ -808,6 +907,34 @@ function sendWhatsApp(orderId) {
 
   const url = `https://wa.me/255762503883?text=${encodeURIComponent(msg)}`;
   window.open(url, '_blank');
+}
+
+// =====================
+// PAYMENT LOGIC
+// =====================
+let selectedPayment = 'cash';
+
+function selectPayment(type) {
+  selectedPayment = type;
+  ['crdb','mpesa','cash'].forEach(t => {
+    const card = document.getElementById('pay-' + t);
+    const detail = document.getElementById(t + '-details');
+    if (card) {
+      card.style.border = t === type ? '2px solid #00b140' : '2px solid #e0e0e0';
+      card.style.background = t === type ? '#f0fff4' : '#fff';
+    }
+    if (detail) detail.style.display = t === type ? 'block' : 'none';
+  });
+}
+
+function showPaymentSection() {
+  const fareTotal = document.getElementById('fareTotal').textContent;
+  document.getElementById('paymentSection').style.display = 'block';
+  document.getElementById('crdb-amount').textContent = fareTotal;
+  document.getElementById('mpesa-amount').textContent = fareTotal;
+  document.getElementById('cash-amount').textContent = fareTotal;
+  // Default to cash selected
+  selectPayment('cash');
 }
 
 function closeModal() {
