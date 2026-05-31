@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Chapdel v2.1 - Light Map Update -->
 <html lang="sw">
 <head>
 <meta charset="UTF-8"/>
@@ -191,7 +192,7 @@
 
   /* MAP */
   .map-container { height:320px; border-radius:16px; overflow:hidden; margin:0 16px 16px; box-shadow:var(--shadow); border:1.5px solid #e0e0e0; }
-  #map { width:100%; height:100%; }
+  #map { width:100%; height:100%; background:#e8f4e8 !important; }
   .map-label {
     background:rgba(0,26,9,0.85); color:var(--green2);
     padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:700;
@@ -236,6 +237,9 @@
     .main { max-width:900px; grid-template-columns:420px 1fr; gap:0; align-items:start; }
     .map-container { height:500px; margin:16px 16px 16px 0; border-radius:20px; position:sticky; top:72px; }
   }
+  /* Force light map tiles */
+  .leaflet-tile { filter: none !important; }
+  .leaflet-container { background: #f2efe9 !important; }
 </style>
 </head>
 <body>
@@ -311,25 +315,37 @@
       <span class="chip" onclick="setPlace('Temeke, Dar es Salaam', 'dropoff')">🏭 Temeke</span>
     </div>
 
-    <!-- SERVICE TYPE (ride only) -->
+    <!-- SERVICE TYPE -->
     <div id="serviceTypeSection">
-      <div class="section-label">🛵 Chagua Huduma</div>
+      <div class="section-label">🚗 Chagua Aina ya Usafiri</div>
       <div class="service-type-row">
+
+        <!-- BODABODA -->
         <div class="stype-card selected" onclick="selectService('ride')" id="svc-ride">
           <span class="stype-icon">🛵</span>
-          <div class="stype-name">Ride</div>
-          <div class="stype-price">TSh 500+</div>
+          <div class="stype-name">Bodaboda</div>
+          <div class="stype-price">500/km</div>
         </div>
-        <div class="stype-card" onclick="selectService('economy')" id="svc-economy">
-          <span class="stype-icon">💨</span>
-          <div class="stype-name">Economy</div>
-          <div class="stype-price">-20% Bei</div>
+
+        <!-- BAJAJI -->
+        <div class="stype-card" onclick="selectService('bajaji')" id="svc-bajaji">
+          <span class="stype-icon">🛺</span>
+          <div class="stype-name">Bajaji</div>
+          <div class="stype-price">700/km</div>
         </div>
+
+        <!-- PREMIUM -->
         <div class="stype-card" onclick="selectService('premium')" id="svc-premium">
           <span class="stype-icon">⭐</span>
           <div class="stype-name">Premium</div>
-          <div class="stype-price">Dereva Bora</div>
+          <div class="stype-price">Bora Zaidi</div>
         </div>
+
+      </div>
+
+      <!-- SERVICE DESCRIPTION BOX -->
+      <div id="service-desc" style="background:#f0fff4;border:1px solid rgba(0,177,64,0.25);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:0.82rem;color:#333;line-height:1.6;">
+        🛵 <strong>Bodaboda</strong> — Haraka, inafaa mitaani na msongamano. Bei: <strong>TSh 500/km</strong>
       </div>
     </div>
 
@@ -524,10 +540,11 @@ const DSM_CENTER = [-6.7924, 39.2083];
 function initMap() {
   map = L.map('map', { zoomControl: true, attributionControl: false }).setView(DSM_CENTER, 12);
 
-  // Light tile layer (free, clean white map)
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  // LIGHT map - white/normal OpenStreetMap
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    attribution: '© OpenStreetMap'
+    attribution: '© OpenStreetMap contributors',
+    crossOrigin: true
   }).addTo(map);
 
   // Coverage circles
@@ -781,13 +798,18 @@ function calculateFare() {
   const dist = haversineKm(pickupCoords.lat, pickupCoords.lng, dropoffCoords.lat, dropoffCoords.lng);
   // Chapdel pricing - competitive vs Bolt
   // Base: TSh 500, Per km: TSh 400 (Bolt charges ~800/km)
-  const baseFare = 500;
-  const perKm = 400;
-  let multiplier = selectedService === 'premium' ? 1.2 : selectedService === 'economy' ? 0.85 : 1.0;
-  if (currentTab === 'parcel') multiplier *= 1.05;
+  // Chapdel Pricing: TSh 500 per km
+  const baseFare = 500;   // Base/starting fee
+  const perKm = 500;      // TSh 500 per km
+  // Fare per service type
+  // Bodaboda: 500/km, Bajaji: 700/km, Premium: 600/km
+  let basePerKm = selectedService === 'bajaji' ? 700 :
+                  selectedService === 'premium' ? 600 : 500;
+  let multiplier = 1.0; // multiplier now handled by basePerKm
+  if (currentTab === 'parcel') multiplier *= 1.1;
   if (currentTab === 'express') multiplier *= 1.3;
-  let fare = Math.round((baseFare + dist * perKm) * multiplier / 100) * 100;
-  fare = Math.max(fare, 500); // Minimum fare TSh 500
+  let fare = Math.round((baseFare + dist * basePerKm) * multiplier / 100) * 100;
+  fare = Math.max(fare, 500); // Minimum TSh 500
   const timeMin = Math.round(dist * 3 + 5);
   document.getElementById('fareDistance').textContent = dist.toFixed(1) + ' km';
   document.getElementById('fareTime').textContent = timeMin + ' dakika';
@@ -811,8 +833,28 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 // =====================
 function selectService(type) {
   selectedService = type;
-  ['ride','economy','premium'].forEach(t => document.getElementById('svc-'+t).classList.remove('selected'));
-  document.getElementById('svc-'+type).classList.add('selected');
+  ['ride','bajaji','premium'].forEach(t => {
+    const el = document.getElementById('svc-' + t);
+    if (el) el.classList.remove('selected');
+  });
+  document.getElementById('svc-' + type).classList.add('selected');
+
+  // Update description box
+  const desc = document.getElementById('service-desc');
+  if (desc) {
+    const descriptions = {
+      'ride':    '🛵 <strong>Bodaboda</strong> — Haraka, inafaa mitaani na msongamano. Bei: <strong>TSh 500/km</strong>',
+      'bajaji':  '🛺 <strong>Bajaji</strong> — Nafasi zaidi, inafaa familia na mizigo midogo. Bei: <strong>TSh 700/km</strong>',
+      'premium': '⭐ <strong>Premium</strong> — Dereva bora zaidi, aliyepangwa vizuri. Bei: <strong>TSh 600/km</strong>'
+    };
+    desc.innerHTML = descriptions[type] || descriptions['ride'];
+  }
+
+  // Update fare service label
+  const labels = { ride: 'Bodaboda', bajaji: 'Bajaji 🛺', premium: 'Premium ⭐' };
+  const fareServiceEl = document.getElementById('fareService');
+  if (fareServiceEl) fareServiceEl.textContent = labels[type] || type;
+
   if (pickupCoords && dropoffCoords) calculateFare();
 }
 
@@ -827,7 +869,7 @@ function switchTab(tab) {
   document.getElementById('parcelExtras').classList.toggle('show', tab === 'parcel');
   document.getElementById('serviceTypeSection').style.display = tab === 'parcel' ? 'none' : 'block';
   const btn = document.getElementById('confirmBtn');
-  const icons = { ride: '🛵', parcel: '📦', express: '⚡' };
+  const icons = { ride: selectedService === 'bajaji' ? '🛺' : selectedService === 'premium' ? '⭐' : '🛵', parcel: '📦', express: '⚡' };
   if (pickupCoords && dropoffCoords) {
     calculateFare();
     btn.disabled = false;
@@ -841,7 +883,7 @@ function switchTab(tab) {
 function updateConfirmButton() {
   const btn = document.getElementById('confirmBtn');
   const waBtn = document.getElementById('waOrderBtn');
-  const icons = { ride: '🛵', parcel: '📦', express: '⚡' };
+  const icons = { ride: selectedService === 'bajaji' ? '🛺' : selectedService === 'premium' ? '⭐' : '🛵', parcel: '📦', express: '⚡' };
   if (pickupCoords && dropoffCoords) {
     btn.disabled = false;
     document.getElementById('confirmBtnText').textContent = icons[currentTab] + ' Thibitisha Ombi';
@@ -871,7 +913,9 @@ function sendWhatsApp(orderId) {
   const dropoff = document.getElementById('dropoffInput').value;
   const fareEl = document.getElementById('fareTotal').textContent;
   const distEl = document.getElementById('fareDistance').textContent;
-  const tab = currentTab === 'ride' ? '🛵 Bodaboda Ride' : currentTab === 'parcel' ? '📦 Parcel Delivery' : '⚡ Express Courier';
+  const svcLabels = { ride: '🛵 Bodaboda', bajaji: '🛺 Bajaji', premium: '⭐ Premium Bodaboda' };
+  const svcLabel = svcLabels[selectedService] || '🛵 Bodaboda';
+  const tab = currentTab === 'ride' ? svcLabel : currentTab === 'parcel' ? '📦 Parcel Delivery' : '⚡ Express Courier';
   const id = orderId || 'CHP-' + Math.floor(Math.random() * 9000 + 1000);
   const payMethods = { crdb: '🏦 CRDB Lipa Hapa (11812432)', mpesa: '📱 M-Pesa (0762503883)', cash: '💵 Taslimu kwa Dereva' };
   const payLabel = payMethods[selectedPayment] || '💵 Taslimu';
