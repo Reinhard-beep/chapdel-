@@ -190,7 +190,7 @@
   .wa-btn:hover { background:#1da851; }
 
   /* MAP */
-  .map-container { height:320px; border-radius:16px; overflow:hidden; margin:0 16px 16px; box-shadow:var(--shadow); }
+  .map-container { height:320px; border-radius:16px; overflow:hidden; margin:0 16px 16px; box-shadow:var(--shadow); border:1.5px solid #e0e0e0; }
   #map { width:100%; height:100%; }
   .map-label {
     background:rgba(0,26,9,0.85); color:var(--green2);
@@ -224,6 +224,7 @@
     animation:slideUp 0.3s ease;
   }
   @keyframes slideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
   .modal-icon { font-size:3.5rem; margin-bottom:16px; }
   .modal h2 { font-size:1.3rem; font-weight:800; color:#222; margin-bottom:8px; }
   .modal p { color:#666; font-size:0.88rem; line-height:1.6; margin-bottom:20px; }
@@ -483,7 +484,7 @@
     <div class="map-container">
       <div id="map"></div>
     </div>
-    <div class="map-label" id="mapLabel">📍 Dar es Salaam & Kibaha</div>
+    <div class="map-label" id="mapLabel" style="background:rgba(0,100,30,0.9);color:#fff;padding:6px 12px;border-radius:8px;font-size:0.75rem;font-weight:700;position:absolute;top:10px;left:10px;z-index:400;pointer-events:none;">📍 Dar es Salaam & Kibaha</div>
   </div>
 
 </div>
@@ -523,14 +524,15 @@ const DSM_CENTER = [-6.7924, 39.2083];
 function initMap() {
   map = L.map('map', { zoomControl: true, attributionControl: false }).setView(DSM_CENTER, 12);
 
-  // Dark tile layer (free)
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-    maxZoom: 19
+  // Light tile layer (free, clean white map)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap'
   }).addTo(map);
 
   // Coverage circles
-  L.circle([-6.7924, 39.2083], { radius: 20000, color: '#00b140', fillColor: '#00b140', fillOpacity: 0.06, weight: 1.5, dashArray: '6 4' }).addTo(map);
-  L.circle([-6.7784, 38.9244], { radius: 12000, color: '#00e65b', fillColor: '#00e65b', fillOpacity: 0.05, weight: 1.5, dashArray: '6 4' }).addTo(map);
+  L.circle([-6.7924, 39.2083], { radius: 20000, color: '#00b140', fillColor: '#00b140', fillOpacity: 0.10, weight: 2, dashArray: '6 4' }).addTo(map);
+  L.circle([-6.7784, 38.9244], { radius: 12000, color: '#00b140', fillColor: '#00b140', fillOpacity: 0.08, weight: 2, dashArray: '6 4' }).addTo(map);
 
   // Click on map to set location
   map.on('click', function(e) {
@@ -777,13 +779,15 @@ function swapLocations() {
 function calculateFare() {
   if (!pickupCoords || !dropoffCoords) return;
   const dist = haversineKm(pickupCoords.lat, pickupCoords.lng, dropoffCoords.lat, dropoffCoords.lng);
-  const baseFare = 1000;
-  const perKm = 800;
-  let multiplier = selectedService === 'premium' ? 1.3 : selectedService === 'economy' ? 0.8 : 1.0;
-  if (currentTab === 'parcel') multiplier *= 1.1;
-  if (currentTab === 'express') multiplier *= 1.5;
+  // Chapdel pricing - competitive vs Bolt
+  // Base: TSh 500, Per km: TSh 400 (Bolt charges ~800/km)
+  const baseFare = 500;
+  const perKm = 400;
+  let multiplier = selectedService === 'premium' ? 1.2 : selectedService === 'economy' ? 0.85 : 1.0;
+  if (currentTab === 'parcel') multiplier *= 1.05;
+  if (currentTab === 'express') multiplier *= 1.3;
   let fare = Math.round((baseFare + dist * perKm) * multiplier / 100) * 100;
-  fare = Math.max(fare, 1000);
+  fare = Math.max(fare, 500); // Minimum fare TSh 500
   const timeMin = Math.round(dist * 3 + 5);
   document.getElementById('fareDistance').textContent = dist.toFixed(1) + ' km';
   document.getElementById('fareTime').textContent = timeMin + ' dakika';
@@ -920,11 +924,31 @@ function selectPayment(type) {
     const card = document.getElementById('pay-' + t);
     const detail = document.getElementById(t + '-details');
     if (card) {
-      card.style.border = t === type ? '2px solid #00b140' : '2px solid #e0e0e0';
-      card.style.background = t === type ? '#f0fff4' : '#fff';
+      if (t === type) {
+        card.style.border = '2px solid #00b140';
+        card.style.background = '#f0fff4';
+        card.style.transform = 'scale(1.03)';
+        card.style.boxShadow = '0 4px 12px rgba(0,177,64,0.2)';
+      } else {
+        card.style.border = '2px solid #e0e0e0';
+        card.style.background = '#fff';
+        card.style.transform = 'scale(1)';
+        card.style.boxShadow = 'none';
+      }
     }
-    if (detail) detail.style.display = t === type ? 'block' : 'none';
+    if (detail) {
+      detail.style.display = t === type ? 'block' : 'none';
+      if (t === type) {
+        detail.style.animation = 'fadeIn 0.3s ease';
+      }
+    }
   });
+  // Update confirm button text
+  const icons = { crdb: '🏦 Lipa CRDB & Thibitisha', mpesa: '📱 Lipa M-Pesa & Thibitisha', cash: '🛵 Thibitisha Ombi' };
+  const btn = document.getElementById('confirmBtn');
+  if (btn && !btn.disabled) {
+    document.getElementById('confirmBtnText').textContent = icons[type] || 'Thibitisha Ombi';
+  }
 }
 
 function showPaymentSection() {
