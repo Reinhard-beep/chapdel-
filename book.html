@@ -303,16 +303,20 @@
     <!-- POPULAR PLACES -->
     <div class="popular-title">📌 Maeneo Maarufu</div>
     <div class="popular-chips" id="popularChips">
-      <span class="chip" onclick="setPlace('Kariakoo, Dar es Salaam', 'pickup')">🏪 Kariakoo</span>
-      <span class="chip" onclick="setPlace('Ubungo, Dar es Salaam', 'pickup')">🚌 Ubungo</span>
-      <span class="chip" onclick="setPlace('Mwenge, Dar es Salaam', 'pickup')">🛒 Mwenge</span>
-      <span class="chip" onclick="setPlace('Kinondoni, Dar es Salaam', 'dropoff')">🏘️ Kinondoni</span>
-      <span class="chip" onclick="setPlace('Julius Nyerere International Airport, Dar es Salaam', 'dropoff')">✈️ JNIA Airport</span>
-      <span class="chip" onclick="setPlace('Mfugale Flyover, Dar es Salaam', 'dropoff')">🌉 Mfugale</span>
-      <span class="chip" onclick="setPlace('Kibaha, Pwani', 'dropoff')">🏙️ Kibaha</span>
-      <span class="chip" onclick="setPlace('Mlimani City, Dar es Salaam', 'dropoff')">🛍️ Mlimani City</span>
-      <span class="chip" onclick="setPlace('Tegeta, Dar es Salaam', 'dropoff')">🏠 Tegeta</span>
-      <span class="chip" onclick="setPlace('Temeke, Dar es Salaam', 'dropoff')">🏭 Temeke</span>
+      <span class="chip" onclick="selectChip('Kariakoo', 'pickup')">🏪 Kariakoo</span>
+      <span class="chip" onclick="selectChip('Ubungo', 'pickup')">🚌 Ubungo</span>
+      <span class="chip" onclick="selectChip('Mwenge', 'pickup')">🛒 Mwenge</span>
+      <span class="chip" onclick="selectChip('Kinondoni', 'dropoff')">🏘️ Kinondoni</span>
+      <span class="chip" onclick="selectChip('Uwanja wa Ndege', 'dropoff')">✈️ Uwanja wa Ndege</span>
+      <span class="chip" onclick="selectChip('Mfugale Flyover', 'dropoff')">🌉 Mfugale</span>
+      <span class="chip" onclick="selectChip('Kibaha', 'dropoff')">🏙️ Kibaha</span>
+      <span class="chip" onclick="selectChip('Kongowe', 'dropoff')">🏫 Kongowe</span>
+      <span class="chip" onclick="selectChip('Mlandizi', 'dropoff')">🏠 Mlandizi</span>
+      <span class="chip" onclick="selectChip('Mlimani City', 'dropoff')">🛍️ Mlimani City</span>
+      <span class="chip" onclick="selectChip('Tegeta', 'dropoff')">🏠 Tegeta</span>
+      <span class="chip" onclick="selectChip('Temeke', 'dropoff')">🏭 Temeke</span>
+      <span class="chip" onclick="selectChip('Kimara', 'dropoff')">🏘️ Kimara</span>
+      <span class="chip" onclick="selectChip('Mbagala', 'dropoff')">🏘️ Mbagala</span>
     </div>
 
     <!-- SERVICE TYPE -->
@@ -722,18 +726,84 @@ function showSuggestions(results, type) {
 
 function showLocalSuggestions(query, type) {
   const places = [
-    { name: 'Kariakoo', area: 'Ilala, Dar es Salaam', lat: -6.8197, lng: 39.2719 },
-    { name: 'Ubungo', area: 'Ubungo, Dar es Salaam', lat: -6.7900, lng: 39.2300 },
-    { name: 'Kinondoni', area: 'Kinondoni, Dar es Salaam', lat: -6.7700, lng: 39.2400 },
-    { name: 'Mwenge', area: 'Kinondoni, Dar es Salaam', lat: -6.7600, lng: 39.2700 },
-    { name: 'Temeke', area: 'Temeke, Dar es Salaam', lat: -6.8700, lng: 39.2800 },
+    // === DAR ES SALAAM - ILALA ===
+    { name: 'Kariakoo', area: 'Ilala, DSM', lat: -6.8197, lng: 39.2719 },
+    { name: 'Gerezani', area: 'Ilala, DSM', lat: -6.8150, lng: 39.2850 },
+    { name: 'Kivukoni', area: 'Ilala, DSM', lat: -6.8130, lng: 39.2980 },
+    { name: 'Magomeni', area: 'Ilala, DSM', lat: -6.8050, lng: 39.2560 },
+    { name: 'Buguruni', area: 'Ilala, DSM', lat: -6.8320, lng: 39.2400 },
+    { name: 'Tabata', area: 'Ilala, DSM', lat: -6.8450, lng: 39.2350 },
+    { name: 'Chanika', area: 'Ilala, DSM', lat: -6.8600, lng: 39.1900 },
+    { name: 'Ukonga', area: 'Ilala, DSM', lat: -6.8530, lng: 39.2100 },
+    { name: 'Segerea', area: 'Ilala, DSM', lat: -6.8400, lng: 39.2150 },
+    { name: 'Vingunguti', area: 'Ilala, DSM', lat: -6.8380, lng: 39.2450 },
+    // === DAR ES SALAAM - KINONDONI ===
+    { name: 'Kinondoni', area: 'Kinondoni, DSM', lat: -6.7700, lng: 39.2400 },
+    { name: 'Mwenge', area: 'Kinondoni, DSM', lat: -6.7600, lng: 39.2700 },
+    { name: 'Msasani', area: 'Kinondoni, DSM', lat: -6.7500, lng: 39.2900 },
+    { name: 'Tegeta', area: 'Kinondoni, DSM', lat: -6.7200, lng: 39.2100 },
+    { name: 'Mbezi Beach', area: 'Kinondoni, DSM', lat: -6.7300, lng: 39.1900 },
+    { name: 'Mbezi Luis', area: 'Kinondoni, DSM', lat: -6.7450, lng: 39.2050 },
+    { name: 'Makongo', area: 'Kinondoni, DSM', lat: -6.7480, lng: 39.2200 },
+    { name: 'Kawe', area: 'Kinondoni, DSM', lat: -6.7350, lng: 39.2450 },
+    { name: 'Sinza', area: 'Kinondoni, DSM', lat: -6.7850, lng: 39.2450 },
+    { name: 'Manzese', area: 'Kinondoni, DSM', lat: -6.7950, lng: 39.2350 },
+    { name: 'Tandale', area: 'Kinondoni, DSM', lat: -6.7880, lng: 39.2500 },
+    { name: 'Kijitonyama', area: 'Kinondoni, DSM', lat: -6.7780, lng: 39.2600 },
+    { name: 'Morocco', area: 'Kinondoni, DSM', lat: -6.7820, lng: 39.2650 },
+    { name: 'Mikocheni', area: 'Kinondoni, DSM', lat: -6.7700, lng: 39.2800 },
+    { name: 'Masaki', area: 'Kinondoni, DSM', lat: -6.7600, lng: 39.3000 },
+    { name: 'Oyster Bay', area: 'Kinondoni, DSM', lat: -6.7700, lng: 39.3050 },
+    { name: 'Ada Estate', area: 'Kinondoni, DSM', lat: -6.7580, lng: 39.2800 },
+    // === DAR ES SALAAM - UBUNGO ===
+    { name: 'Ubungo', area: 'Ubungo, DSM', lat: -6.7900, lng: 39.2300 },
+    { name: 'Kimara', area: 'Ubungo, DSM', lat: -6.7800, lng: 39.1900 },
+    { name: 'Kimara Mwisho', area: 'Ubungo, DSM', lat: -6.7750, lng: 39.1750 },
+    { name: 'Mlimani City', area: 'Ubungo, DSM', lat: -6.7750, lng: 39.2388 },
+    { name: 'Magufuli', area: 'Ubungo, DSM', lat: -6.7820, lng: 39.2180 },
+    { name: 'Mabibo', area: 'Ubungo, DSM', lat: -6.7950, lng: 39.2200 },
+    { name: 'Goba', area: 'Ubungo, DSM', lat: -6.7400, lng: 39.2000 },
+    { name: 'Saranga', area: 'Ubungo, DSM', lat: -6.7700, lng: 39.2150 },
+    // === DAR ES SALAAM - TEMEKE ===
+    { name: 'Temeke', area: 'Temeke, DSM', lat: -6.8700, lng: 39.2800 },
+    { name: 'Mbagala', area: 'Temeke, DSM', lat: -6.8950, lng: 39.2700 },
+    { name: 'Kigamboni', area: 'Temeke, DSM', lat: -6.8500, lng: 39.3200 },
+    { name: 'Chang'ombe', area: 'Temeke, DSM', lat: -6.8600, lng: 39.2600 },
+    { name: 'Tandika', area: 'Temeke, DSM', lat: -6.8800, lng: 39.2650 },
+    { name: 'Kurasini', area: 'Temeke, DSM', lat: -6.8400, lng: 39.3000 },
+    { name: 'Mjimwema', area: 'Temeke, DSM', lat: -6.8700, lng: 39.3100 },
+    { name: 'Yombo', area: 'Temeke, DSM', lat: -6.8850, lng: 39.2500 },
+    // === AIRPORTS & MAJOR LANDMARKS ===
+    { name: 'JNIA Airport', area: 'Julius Nyerere International, DSM', lat: -6.8780, lng: 39.2026 },
+    { name: 'Uwanja wa Ndege', area: 'Julius Nyerere International, DSM', lat: -6.8780, lng: 39.2026 },
+    { name: 'Picha ya Ndege', area: 'Airport Area, DSM', lat: -6.8750, lng: 39.2050 },
+    { name: 'Mfugale Flyover', area: 'Ubungo, DSM', lat: -6.7920, lng: 39.2280 },
+    { name: 'Posta', area: 'Ilala, DSM', lat: -6.8170, lng: 39.2900 },
+    { name: 'Ferry', area: 'Kivukoni, DSM', lat: -6.8160, lng: 39.2960 },
+    { name: 'Mnazi Mmoja', area: 'Ilala, DSM', lat: -6.8200, lng: 39.2830 },
+    { name: 'Muhimbili', area: 'Upanga, DSM', lat: -6.8030, lng: 39.2700 },
+    { name: 'UDSM', area: 'University of DSM, Ubungo', lat: -6.7740, lng: 39.2380 },
+    // === KIBAHA & PWANI ===
     { name: 'Kibaha', area: 'Kibaha, Pwani', lat: -6.7784, lng: 38.9244 },
-    { name: 'JNIA Airport', area: 'Dar es Salaam', lat: -6.8780, lng: 39.2026 },
-    { name: 'Msasani', area: 'Kinondoni, Dar es Salaam', lat: -6.7500, lng: 39.2900 },
-    { name: 'Tegeta', area: 'Kinondoni, Dar es Salaam', lat: -6.7200, lng: 39.2100 },
-    { name: 'Mlimani City', area: 'Ubungo, Dar es Salaam', lat: -6.7750, lng: 39.2388 },
+    { name: 'Kibaha Mji', area: 'Kibaha, Pwani', lat: -6.7784, lng: 38.9244 },
+    { name: 'Mlandizi', area: 'Kibaha, Pwani', lat: -6.8050, lng: 38.8050 },
+    { name: 'Kongowe', area: 'Kibaha, Pwani', lat: -6.7600, lng: 38.9500 },
+    { name: 'Soga', area: 'Kibaha, Pwani', lat: -6.7400, lng: 38.9700 },
+    { name: 'Kwala', area: 'Kibaha, Pwani', lat: -6.8300, lng: 38.9100 },
+    { name: 'Tumbi', area: 'Kibaha, Pwani', lat: -6.7900, lng: 38.9300 },
+    { name: 'Msangani', area: 'Kibaha, Pwani', lat: -6.7200, lng: 38.9800 },
+    { name: 'Ruvu', area: 'Kibaha, Pwani', lat: -6.8200, lng: 38.8500 },
+    { name: 'Vigwaza', area: 'Kibaha, Pwani', lat: -6.7900, lng: 38.9600 },
+    { name: 'Kibaha Kaskazini', area: 'Kibaha, Pwani', lat: -6.7500, lng: 38.9400 },
+    { name: 'Magindu', area: 'Kibaha, Pwani', lat: -6.7650, lng: 38.9350 },
   ];
-  const filtered = places.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
+
+  // Search both name AND area
+  const q = query.toLowerCase();
+  const filtered = places.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.area.toLowerCase().includes(q)
+  );
   const box = document.getElementById(type + 'Suggestions');
   if (!filtered.length) { box.classList.remove('open'); return; }
   box.innerHTML = filtered.map(p =>
@@ -756,8 +826,57 @@ function selectSuggestion(type, lat, lng, name, area) {
 function setPlace(placeName, type) {
   document.getElementById(type + 'Input').value = placeName;
   searchLocation(placeName, type);
-  // Also trigger search immediately
   setTimeout(() => searchLocation(placeName, type), 100);
+}
+
+// Select from chips - uses local database directly (no internet needed)
+function selectChip(name, type) {
+  const places = getAllPlaces();
+  const found = places.find(p => p.name.toLowerCase() === name.toLowerCase());
+  if (found) {
+    document.getElementById(type + 'Input').value = found.name + ', ' + found.area;
+    document.getElementById(type + 'Clear').classList.add('visible');
+    document.getElementById(type + 'Suggestions').classList.remove('open');
+    setMarker(type, found.lat, found.lng, found.name);
+  } else {
+    setPlace(name, type);
+  }
+}
+
+// All places database (shared)
+function getAllPlaces() {
+  return [
+    { name: 'Kariakoo', area: 'Ilala, DSM', lat: -6.8197, lng: 39.2719 },
+    { name: 'Ubungo', area: 'Ubungo, DSM', lat: -6.7900, lng: 39.2300 },
+    { name: 'Kinondoni', area: 'Kinondoni, DSM', lat: -6.7700, lng: 39.2400 },
+    { name: 'Mwenge', area: 'Kinondoni, DSM', lat: -6.7600, lng: 39.2700 },
+    { name: 'Temeke', area: 'Temeke, DSM', lat: -6.8700, lng: 39.2800 },
+    { name: 'Kibaha', area: 'Kibaha, Pwani', lat: -6.7784, lng: 38.9244 },
+    { name: 'Uwanja wa Ndege', area: 'JNIA Airport, DSM', lat: -6.8780, lng: 39.2026 },
+    { name: 'Picha ya Ndege', area: 'Airport Area, DSM', lat: -6.8750, lng: 39.2050 },
+    { name: 'JNIA Airport', area: 'Julius Nyerere International, DSM', lat: -6.8780, lng: 39.2026 },
+    { name: 'Msasani', area: 'Kinondoni, DSM', lat: -6.7500, lng: 39.2900 },
+    { name: 'Tegeta', area: 'Kinondoni, DSM', lat: -6.7200, lng: 39.2100 },
+    { name: 'Mlimani City', area: 'Ubungo, DSM', lat: -6.7750, lng: 39.2388 },
+    { name: 'Kongowe', area: 'Kibaha, Pwani', lat: -6.7600, lng: 38.9500 },
+    { name: 'Mlandizi', area: 'Kibaha, Pwani', lat: -6.8050, lng: 38.8050 },
+    { name: 'Kimara', area: 'Ubungo, DSM', lat: -6.7800, lng: 39.1900 },
+    { name: 'Mbagala', area: 'Temeke, DSM', lat: -6.8950, lng: 39.2700 },
+    { name: 'Mfugale Flyover', area: 'Ubungo, DSM', lat: -6.7920, lng: 39.2280 },
+    { name: 'Kigamboni', area: 'Temeke, DSM', lat: -6.8500, lng: 39.3200 },
+    { name: 'Mbezi Beach', area: 'Kinondoni, DSM', lat: -6.7300, lng: 39.1900 },
+    { name: 'Sinza', area: 'Kinondoni, DSM', lat: -6.7850, lng: 39.2450 },
+    { name: 'Goba', area: 'Ubungo, DSM', lat: -6.7400, lng: 39.2000 },
+    { name: 'Kawe', area: 'Kinondoni, DSM', lat: -6.7350, lng: 39.2450 },
+    { name: 'Vigwaza', area: 'Kibaha, Pwani', lat: -6.7900, lng: 38.9600 },
+    { name: 'Tumbi', area: 'Kibaha, Pwani', lat: -6.7900, lng: 38.9300 },
+    { name: 'Soga', area: 'Kibaha, Pwani', lat: -6.7400, lng: 38.9700 },
+    { name: 'Muhimbili', area: 'Upanga, DSM', lat: -6.8030, lng: 39.2700 },
+    { name: 'Posta', area: 'Ilala, DSM', lat: -6.8170, lng: 39.2900 },
+    { name: 'Tabata', area: 'Ilala, DSM', lat: -6.8450, lng: 39.2350 },
+    { name: 'Buguruni', area: 'Ilala, DSM', lat: -6.8320, lng: 39.2400 },
+    { name: 'Manzese', area: 'Kinondoni, DSM', lat: -6.7950, lng: 39.2350 },
+  ];
 }
 
 // =====================
