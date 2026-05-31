@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Chapdel – Book a Ride / Send Parcel</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#00b140"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="Chapdel"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+
+<!-- Leaflet CSS (Free OpenStreetMap) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+
+<style>
+  :root {
+    --green: #00b140;
+    --green-dark: #008f32;
+    --green2: #00e65b;
+    --dark: #0a1a0d;
+    --white: #fff;
+    --gray: #f5f7f5;
+    --border: #e0e8e0;
+    --shadow: 0 4px 24px rgba(0,0,0,0.10);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { font-family:'Poppins',sans-serif; background:var(--gray); color:#222; }
+
+  /* TOP BAR */
+  .topbar {
+    background:var(--dark); color:#fff;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 16px; height:56px; position:sticky; top:0; z-index:200;
+    box-shadow:0 2px 12px rgba(0,0,0,0.3);
+  }
+  .topbar-logo { font-weight:900; font-size:1.2rem; color:var(--green2); }
+  .topbar-logo span { color:#fff; }
+  .back-btn { color:rgba(255,255,255,0.7); text-decoration:none; font-size:0.85rem; display:flex; align-items:center; gap:6px; }
+  .back-btn:hover { color:#fff; }
+
+  /* SERVICE TABS */
+  .service-tabs { display:flex; background:#fff; border-bottom:1px solid var(--border); }
+  .tab {
+    flex:1; padding:14px 8px; text-align:center; font-weight:700;
+    font-size:0.88rem; cursor:pointer; border-bottom:3px solid transparent;
+    color:#888; transition:all 0.2s;
+  }
+  .tab.active { color:var(--green); border-bottom-color:var(--green); background:#f0fff4; }
+  .tab:hover { background:#f5fff8; }
+
+  /* MAIN LAYOUT */
+  .main { display:grid; grid-template-columns:1fr; max-width:480px; margin:0 auto; }
+
+  /* BOOKING PANEL */
+  .booking-panel { background:#fff; padding:20px 16px; }
+
+  .section-label {
+    font-size:0.7rem; font-weight:700; letter-spacing:1.5px;
+    text-transform:uppercase; color:#999; margin-bottom:10px;
+  }
+
+  /* LOCATION INPUTS */
+  .location-box { position:relative; margin-bottom:12px; }
+  .location-dot {
+    position:absolute; left:14px; top:50%; transform:translateY(-50%);
+    width:12px; height:12px; border-radius:50%; z-index:1;
+  }
+  .dot-green { background:var(--green); box-shadow:0 0 0 3px rgba(0,177,64,0.2); }
+  .dot-red { background:#e53935; box-shadow:0 0 0 3px rgba(229,57,53,0.2); }
+
+  .location-input {
+    width:100%; padding:14px 44px 14px 36px;
+    border:1.5px solid var(--border); border-radius:14px;
+    font-size:0.92rem; font-family:'Poppins',sans-serif;
+    outline:none; background:#fafafa; transition:all 0.2s;
+  }
+  .location-input:focus { border-color:var(--green); background:#fff; box-shadow:0 0 0 3px rgba(0,177,64,0.1); }
+  .location-input::placeholder { color:#bbb; }
+
+  .clear-btn {
+    position:absolute; right:12px; top:50%; transform:translateY(-50%);
+    background:none; border:none; color:#bbb; font-size:1.1rem;
+    cursor:pointer; padding:4px; display:none;
+  }
+  .clear-btn.visible { display:block; }
+
+  /* MY LOCATION BUTTON */
+  .myloc-btn {
+    display:flex; align-items:center; gap:8px;
+    background:rgba(0,177,64,0.08); border:1.5px solid rgba(0,177,64,0.25);
+    color:var(--green-dark); padding:10px 16px; border-radius:12px;
+    font-size:0.85rem; font-weight:600; cursor:pointer; width:100%;
+    margin-bottom:14px; transition:all 0.2s;
+  }
+  .myloc-btn:hover { background:rgba(0,177,64,0.15); }
+  .myloc-btn .spinner { display:none; width:14px; height:14px; border:2px solid var(--green); border-top-color:transparent; border-radius:50%; animation:spin 0.8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* SUGGESTIONS DROPDOWN */
+  .suggestions {
+    position:absolute; top:calc(100% + 4px); left:0; right:0;
+    background:#fff; border:1.5px solid var(--border); border-radius:14px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.12); z-index:500;
+    max-height:240px; overflow-y:auto; display:none;
+  }
+  .suggestions.open { display:block; }
+  .suggestion-item {
+    padding:12px 16px; cursor:pointer; border-bottom:1px solid #f0f0f0;
+    display:flex; align-items:center; gap:10px; transition:background 0.15s;
+  }
+  .suggestion-item:last-child { border-bottom:none; }
+  .suggestion-item:hover { background:#f0fff4; }
+  .sug-icon { font-size:1rem; flex-shrink:0; }
+  .sug-name { font-size:0.88rem; font-weight:600; color:#222; }
+  .sug-area { font-size:0.75rem; color:#999; }
+
+  /* DIVIDER with swap button */
+  .swap-row { display:flex; align-items:center; gap:10px; margin:4px 0 12px; }
+  .swap-line { flex:1; height:1px; background:var(--border); }
+  .swap-btn {
+    background:#f0fff4; border:1.5px solid var(--border); color:var(--green);
+    width:34px; height:34px; border-radius:50%; font-size:1rem;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:all 0.2s; flex-shrink:0;
+  }
+  .swap-btn:hover { background:var(--green); color:#fff; border-color:var(--green); }
+
+  /* POPULAR PLACES */
+  .popular-title { font-size:0.75rem; font-weight:700; color:#999; letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+  .popular-chips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .chip {
+    background:#f5f5f5; border:1px solid #e0e0e0; color:#444;
+    padding:7px 14px; border-radius:50px; font-size:0.78rem; font-weight:600;
+    cursor:pointer; transition:all 0.2s; white-space:nowrap;
+  }
+  .chip:hover { background:var(--green); color:#fff; border-color:var(--green); }
+
+  /* SERVICE TYPE */
+  .service-type-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:16px; }
+  .stype-card {
+    border:2px solid var(--border); border-radius:14px; padding:12px 8px;
+    text-align:center; cursor:pointer; transition:all 0.2s;
+  }
+  .stype-card:hover { border-color:var(--green); }
+  .stype-card.selected { border-color:var(--green); background:#f0fff4; }
+  .stype-icon { font-size:1.4rem; display:block; margin-bottom:4px; }
+  .stype-name { font-size:0.72rem; font-weight:700; color:#333; }
+  .stype-price { font-size:0.68rem; color:var(--green); font-weight:600; margin-top:2px; }
+
+  /* FARE ESTIMATE */
+  .fare-box {
+    background:linear-gradient(135deg,#f0fff4,#e6f9ed);
+    border:1.5px solid rgba(0,177,64,0.3); border-radius:16px;
+    padding:16px; margin-bottom:16px; display:none;
+  }
+  .fare-box.visible { display:block; }
+  .fare-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+  .fare-label { font-size:0.8rem; color:#666; }
+  .fare-value { font-size:0.88rem; font-weight:700; color:#222; }
+  .fare-total { display:flex; justify-content:space-between; align-items:center; border-top:1px solid rgba(0,177,64,0.2); padding-top:10px; margin-top:6px; }
+  .fare-total-label { font-size:0.92rem; font-weight:700; color:#222; }
+  .fare-total-value { font-size:1.2rem; font-weight:900; color:var(--green); }
+
+  /* CONFIRM BUTTON */
+  .confirm-btn {
+    width:100%; background:var(--green); color:#fff;
+    border:none; padding:16px; border-radius:16px;
+    font-size:1rem; font-weight:800; cursor:pointer;
+    font-family:'Poppins',sans-serif; transition:all 0.2s;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    margin-bottom:12px; box-shadow:0 4px 20px rgba(0,177,64,0.35);
+  }
+  .confirm-btn:hover { background:var(--green-dark); transform:translateY(-1px); }
+  .confirm-btn:disabled { background:#ccc; box-shadow:none; cursor:not-allowed; transform:none; }
+
+  .wa-btn {
+    width:100%; background:#25D366; color:#fff;
+    border:none; padding:14px; border-radius:16px;
+    font-size:0.92rem; font-weight:700; cursor:pointer;
+    font-family:'Poppins',sans-serif; transition:all 0.2s;
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    text-decoration:none; margin-bottom:16px;
+  }
+  .wa-btn:hover { background:#1da851; }
+
+  /* MAP */
+  .map-container { height:320px; border-radius:16px; overflow:hidden; margin:0 16px 16px; box-shadow:var(--shadow); }
+  #map { width:100%; height:100%; }
+  .map-label {
+    background:rgba(0,26,9,0.85); color:var(--green2);
+    padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:700;
+    position:absolute; top:10px; left:10px; z-index:400; pointer-events:none;
+  }
+
+  /* PARCEL FORM EXTRAS */
+  .parcel-extras { display:none; }
+  .parcel-extras.show { display:block; }
+  .form-group { margin-bottom:14px; }
+  .form-group label { font-size:0.78rem; font-weight:700; color:#555; display:block; margin-bottom:6px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width:100%; padding:12px 14px; border:1.5px solid var(--border);
+    border-radius:12px; font-size:0.9rem; font-family:'Poppins',sans-serif;
+    outline:none; background:#fafafa; transition:border 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus { border-color:var(--green); background:#fff; }
+  .form-group textarea { height:80px; resize:none; }
+
+  /* SUCCESS MODAL */
+  .modal-overlay {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6);
+    z-index:1000; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:#fff; border-radius:24px; padding:32px 24px;
+    max-width:360px; width:100%; text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,0.3);
+    animation:slideUp 0.3s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(40px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-icon { font-size:3.5rem; margin-bottom:16px; }
+  .modal h2 { font-size:1.3rem; font-weight:800; color:#222; margin-bottom:8px; }
+  .modal p { color:#666; font-size:0.88rem; line-height:1.6; margin-bottom:20px; }
+  .modal-order-id { background:#f0fff4; border:1px solid rgba(0,177,64,0.3); border-radius:10px; padding:10px; font-weight:800; color:var(--green); font-size:1rem; margin-bottom:20px; }
+  .modal-close { background:var(--green); color:#fff; border:none; padding:12px 28px; border-radius:50px; font-weight:700; cursor:pointer; font-family:'Poppins',sans-serif; font-size:0.95rem; }
+
+  /* RESPONSIVE */
+  @media(min-width:768px) {
+    .main { max-width:900px; grid-template-columns:420px 1fr; gap:0; align-items:start; }
+    .map-container { height:500px; margin:16px 16px 16px 0; border-radius:20px; position:sticky; top:72px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <a href="index.html" class="back-btn">← Nyuma</a>
+  <div class="topbar-logo">CHAPDEL<span> LOGISTICS</span></div>
+  <div style="width:60px;"></div>
+</div>
+
+<!-- SERVICE TABS -->
+<div class="service-tabs">
+  <div class="tab active" onclick="switchTab('ride')" id="tab-ride">🛵 Bodaboda Ride</div>
+  <div class="tab" onclick="switchTab('parcel')" id="tab-parcel">📦 Tuma Parcel</div>
+  <div class="tab" onclick="switchTab('express')" id="tab-express">⚡ Express</div>
+</div>
+
+<div class="main">
+  <!-- BOOKING PANEL -->
+  <div class="booking-panel">
+
+    <!-- MY LOCATION -->
+    <button class="myloc-btn" onclick="getMyLocation()" id="myLocBtn">
+      <span>📍</span>
+      <span id="myLocText">Tumia Mahali Nilipo Sasa (GPS)</span>
+      <div class="spinner" id="locSpinner"></div>
+    </button>
+
+    <!-- PICKUP -->
+    <div class="section-label">📍 Unatoka Wapi?</div>
+    <div class="location-box" id="pickupBox">
+      <div class="location-dot dot-green"></div>
+      <input type="text" class="location-input" id="pickupInput"
+        placeholder="Tafuta au andika mahali unapotoka..."
+        oninput="searchLocation(this.value, 'pickup')"
+        autocomplete="off"/>
+      <button class="clear-btn" id="pickupClear" onclick="clearInput('pickup')">✕</button>
+      <div class="suggestions" id="pickupSuggestions"></div>
+    </div>
+
+    <!-- SWAP -->
+    <div class="swap-row">
+      <div class="swap-line"></div>
+      <button class="swap-btn" onclick="swapLocations()" title="Badilisha">⇅</button>
+      <div class="swap-line"></div>
+    </div>
+
+    <!-- DROPOFF -->
+    <div class="section-label">🏁 Unaenda Wapi?</div>
+    <div class="location-box" id="dropoffBox">
+      <div class="location-dot dot-red"></div>
+      <input type="text" class="location-input" id="dropoffInput"
+        placeholder="Tafuta au andika unakokwenda..."
+        oninput="searchLocation(this.value, 'dropoff')"
+        autocomplete="off"/>
+      <button class="clear-btn" id="dropoffClear" onclick="clearInput('dropoff')">✕</button>
+      <div class="suggestions" id="dropoffSuggestions"></div>
+    </div>
+
+    <!-- POPULAR PLACES -->
+    <div class="popular-title">📌 Maeneo Maarufu</div>
+    <div class="popular-chips" id="popularChips">
+      <span class="chip" onclick="setPlace('Kariakoo, Dar es Salaam', 'pickup')">🏪 Kariakoo</span>
+      <span class="chip" onclick="setPlace('Ubungo, Dar es Salaam', 'pickup')">🚌 Ubungo</span>
+      <span class="chip" onclick="setPlace('Mwenge, Dar es Salaam', 'pickup')">🛒 Mwenge</span>
+      <span class="chip" onclick="setPlace('Kinondoni, Dar es Salaam', 'dropoff')">🏘️ Kinondoni</span>
+      <span class="chip" onclick="setPlace('Julius Nyerere International Airport, Dar es Salaam', 'dropoff')">✈️ JNIA Airport</span>
+      <span class="chip" onclick="setPlace('Mfugale Flyover, Dar es Salaam', 'dropoff')">🌉 Mfugale</span>
+      <span class="chip" onclick="setPlace('Kibaha, Pwani', 'dropoff')">🏙️ Kibaha</span>
+      <span class="chip" onclick="setPlace('Mlimani City, Dar es Salaam', 'dropoff')">🛍️ Mlimani City</span>
+      <span class="chip" onclick="setPlace('Tegeta, Dar es Salaam', 'dropoff')">🏠 Tegeta</span>
+      <span class="chip" onclick="setPlace('Temeke, Dar es Salaam', 'dropoff')">🏭 Temeke</span>
+    </div>
+
+    <!-- SERVICE TYPE (ride only) -->
+    <div id="serviceTypeSection">
+      <div class="section-label">🛵 Chagua Huduma</div>
+      <div class="service-type-row">
+        <div class="stype-card selected" onclick="selectService('ride')" id="svc-ride">
+          <span class="stype-icon">🛵</span>
+          <div class="stype-name">Ride</div>
+          <div class="stype-price">TSh 500+</div>
+        </div>
+        <div class="stype-card" onclick="selectService('economy')" id="svc-economy">
+          <span class="stype-icon">💨</span>
+          <div class="stype-name">Economy</div>
+          <div class="stype-price">-20% Bei</div>
+        </div>
+        <div class="stype-card" onclick="selectService('premium')" id="svc-premium">
+          <span class="stype-icon">⭐</span>
+          <div class="stype-name">Premium</div>
+          <div class="stype-price">Dereva Bora</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PARCEL EXTRAS -->
+    <div class="parcel-extras" id="parcelExtras">
+      <div class="section-label">📦 Maelezo ya Parcel</div>
+      <div class="form-group">
+        <label>Jina la Mpokeaji</label>
+        <input type="text" id="recipientName" placeholder="Jina la mtu atakayepokea"/>
+      </div>
+      <div class="form-group">
+        <label>Namba ya Mpokeaji</label>
+        <input type="tel" id="recipientPhone" placeholder="+255 7XX XXX XXX"/>
+      </div>
+      <div class="form-group">
+        <label>Aina ya Parcel</label>
+        <select id="parcelType">
+          <option value="">-- Chagua --</option>
+          <option>Hati / Documents</option>
+          <option>Chakula / Food</option>
+          <option>Nguo / Clothes</option>
+          <option>Vifaa vya Elektroniki</option>
+          <option>Madawa</option>
+          <option>Nyingine</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Maelezo Zaidi (Si lazima)</label>
+        <textarea id="parcelNote" placeholder="e.g. Fragile, tafadhali shughulikia kwa uangalifu..."></textarea>
+      </div>
+    </div>
+
+    <!-- FARE ESTIMATE -->
+    <div class="fare-box" id="fareBox">
+      <div class="fare-row">
+        <span class="fare-label">📏 Umbali wa Safari</span>
+        <span class="fare-value" id="fareDistance">— km</span>
+      </div>
+      <div class="fare-row">
+        <span class="fare-label">⏱️ Muda wa Kufika</span>
+        <span class="fare-value" id="fareTime">— dakika</span>
+      </div>
+      <div class="fare-row">
+        <span class="fare-label">🛵 Aina ya Huduma</span>
+        <span class="fare-value" id="fareService">Ride</span>
+      </div>
+      <div class="fare-total">
+        <span class="fare-total-label">💰 Bei ya Safari</span>
+        <span class="fare-total-value" id="fareTotal">TSh —</span>
+      </div>
+    </div>
+
+    <!-- CONFIRM BUTTONS -->
+    <button class="confirm-btn" id="confirmBtn" onclick="confirmBooking()" disabled>
+      <span>🛵</span> <span id="confirmBtnText">Weka Pickup na Dropoff Kwanza</span>
+    </button>
+
+    <a href="#" class="wa-btn" id="waOrderBtn" style="display:none" onclick="sendWhatsApp()">
+      <span>💬</span> Agiza kupitia WhatsApp
+    </a>
+
+    <div style="text-align:center;font-size:0.75rem;color:#aaa;margin-bottom:8px;">
+      📞 Msaada: <a href="tel:+255762503883" style="color:var(--green);">+255 762 503 883</a>
+    </div>
+
+  </div>
+
+  <!-- MAP -->
+  <div style="position:relative;">
+    <div class="map-container">
+      <div id="map"></div>
+    </div>
+    <div class="map-label" id="mapLabel">📍 Dar es Salaam & Kibaha</div>
+  </div>
+
+</div>
+
+<!-- SUCCESS MODAL -->
+<div class="modal-overlay" id="successModal">
+  <div class="modal">
+    <div class="modal-icon">🎉</div>
+    <h2>Ombi Limetumwa!</h2>
+    <p>Ombi lako limetumwa kwa Chapdel Logistics. Dereva atakuwasiliana nawe kupitia WhatsApp hivi karibuni!</p>
+    <div class="modal-order-id" id="orderIdDisplay">Order #CHP-0000</div>
+    <p style="font-size:0.8rem;color:#999;margin-bottom:16px;">Wastani wa kufika: dakika 5–10 🛵</p>
+    <button class="modal-close" onclick="closeModal()">✅ Sawa, Asante!</button>
+  </div>
+</div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+// =====================
+// STATE
+// =====================
+let map, pickupMarker, dropoffMarker, routeLine;
+let pickupCoords = null, dropoffCoords = null;
+let currentTab = 'ride';
+let selectedService = 'ride';
+let searchTimers = {};
+
+// Dar es Salaam center
+const DSM_CENTER = [-6.7924, 39.2083];
+
+// =====================
+// INIT MAP
+// =====================
+function initMap() {
+  map = L.map('map', { zoomControl: true, attributionControl: false }).setView(DSM_CENTER, 12);
+
+  // Dark tile layer (free)
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19
+  }).addTo(map);
+
+  // Coverage circles
+  L.circle([-6.7924, 39.2083], { radius: 20000, color: '#00b140', fillColor: '#00b140', fillOpacity: 0.06, weight: 1.5, dashArray: '6 4' }).addTo(map);
+  L.circle([-6.7784, 38.9244], { radius: 12000, color: '#00e65b', fillColor: '#00e65b', fillOpacity: 0.05, weight: 1.5, dashArray: '6 4' }).addTo(map);
+
+  // Click on map to set location
+  map.on('click', function(e) {
+    const latlng = e.latlng;
+    if (!pickupCoords) {
+      setMarker('pickup', latlng.lat, latlng.lng, 'Mahali uliochagua kwenye ramani');
+      reverseGeocode(latlng.lat, latlng.lng, 'pickup');
+    } else if (!dropoffCoords) {
+      setMarker('dropoff', latlng.lat, latlng.lng, 'Destination uliochagua');
+      reverseGeocode(latlng.lat, latlng.lng, 'dropoff');
+    }
+  });
+}
+
+// =====================
+// CUSTOM MARKERS
+// =====================
+function greenIcon() {
+  return L.divIcon({
+    html: '<div style="background:#00b140;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);"></div>',
+    iconSize: [20, 20], iconAnchor: [10, 10], className: ''
+  });
+}
+function redIcon() {
+  return L.divIcon({
+    html: '<div style="background:#e53935;width:20px;height:20px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.4);"></div>',
+    iconSize: [20, 20], iconAnchor: [10, 10], className: ''
+  });
+}
+
+// =====================
+// SET MARKER ON MAP
+// =====================
+function setMarker(type, lat, lng, label) {
+  if (type === 'pickup') {
+    if (pickupMarker) map.removeLayer(pickupMarker);
+    pickupMarker = L.marker([lat, lng], { icon: greenIcon() })
+      .addTo(map).bindPopup('📍 ' + label).openPopup();
+    pickupCoords = { lat, lng, label };
+  } else {
+    if (dropoffMarker) map.removeLayer(dropoffMarker);
+    dropoffMarker = L.marker([lat, lng], { icon: redIcon() })
+      .addTo(map).bindPopup('🏁 ' + label).openPopup();
+    dropoffCoords = { lat, lng, label };
+  }
+
+  if (pickupCoords && dropoffCoords) {
+    drawRoute();
+    calculateFare();
+    fitMapToBounds();
+  } else {
+    map.setView([lat, lng], 14);
+  }
+  updateConfirmButton();
+}
+
+// =====================
+// DRAW ROUTE LINE
+// =====================
+function drawRoute() {
+  if (routeLine) map.removeLayer(routeLine);
+  if (!pickupCoords || !dropoffCoords) return;
+  routeLine = L.polyline([
+    [pickupCoords.lat, pickupCoords.lng],
+    [dropoffCoords.lat, dropoffCoords.lng]
+  ], { color: '#00e65b', weight: 4, opacity: 0.8, dashArray: '10 6' }).addTo(map);
+}
+
+function fitMapToBounds() {
+  if (!pickupCoords || !dropoffCoords) return;
+  const bounds = L.latLngBounds(
+    [pickupCoords.lat, pickupCoords.lng],
+    [dropoffCoords.lat, dropoffCoords.lng]
+  );
+  map.fitBounds(bounds, { padding: [60, 60] });
+}
+
+// =====================
+// SEARCH LOCATION (Nominatim - Free)
+// =====================
+function searchLocation(query, type) {
+  const clearBtn = document.getElementById(type + 'Clear');
+  clearBtn.classList.toggle('visible', query.length > 0);
+
+  const sugBox = document.getElementById(type + 'Suggestions');
+  if (query.length < 2) { sugBox.classList.remove('open'); return; }
+
+  clearTimeout(searchTimers[type]);
+  searchTimers[type] = setTimeout(async () => {
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Dar es Salaam Tanzania')}&limit=6&countrycodes=tz&addressdetails=1`;
+      const res = await fetch(url, { headers: { 'Accept-Language': 'sw,en' } });
+      const data = await res.json();
+      showSuggestions(data, type);
+    } catch(e) {
+      // If no internet, show local suggestions
+      showLocalSuggestions(query, type);
+    }
+  }, 400);
+}
+
+function showSuggestions(results, type) {
+  const box = document.getElementById(type + 'Suggestions');
+  if (!results.length) {
+    box.innerHTML = '<div class="suggestion-item"><span class="sug-icon">🔍</span><div><div class="sug-name">Hakuna matokeo</div><div class="sug-area">Jaribu jina lingine</div></div></div>';
+    box.classList.add('open');
+    return;
+  }
+  box.innerHTML = results.map(r => {
+    const name = r.display_name.split(',')[0];
+    const area = r.display_name.split(',').slice(1, 3).join(',').trim();
+    return `<div class="suggestion-item" onclick="selectSuggestion('${type}', ${r.lat}, ${r.lon}, '${name.replace(/'/g,"\\'")}', '${area.replace(/'/g,"\\'")}')">
+      <span class="sug-icon">📍</span>
+      <div><div class="sug-name">${name}</div><div class="sug-area">${area}</div></div>
+    </div>`;
+  }).join('');
+  box.classList.add('open');
+}
+
+function showLocalSuggestions(query, type) {
+  const places = [
+    { name: 'Kariakoo', area: 'Ilala, Dar es Salaam', lat: -6.8197, lng: 39.2719 },
+    { name: 'Ubungo', area: 'Ubungo, Dar es Salaam', lat: -6.7900, lng: 39.2300 },
+    { name: 'Kinondoni', area: 'Kinondoni, Dar es Salaam', lat: -6.7700, lng: 39.2400 },
+    { name: 'Mwenge', area: 'Kinondoni, Dar es Salaam', lat: -6.7600, lng: 39.2700 },
+    { name: 'Temeke', area: 'Temeke, Dar es Salaam', lat: -6.8700, lng: 39.2800 },
+    { name: 'Kibaha', area: 'Kibaha, Pwani', lat: -6.7784, lng: 38.9244 },
+    { name: 'JNIA Airport', area: 'Dar es Salaam', lat: -6.8780, lng: 39.2026 },
+    { name: 'Msasani', area: 'Kinondoni, Dar es Salaam', lat: -6.7500, lng: 39.2900 },
+    { name: 'Tegeta', area: 'Kinondoni, Dar es Salaam', lat: -6.7200, lng: 39.2100 },
+    { name: 'Mlimani City', area: 'Ubungo, Dar es Salaam', lat: -6.7750, lng: 39.2388 },
+  ];
+  const filtered = places.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
+  const box = document.getElementById(type + 'Suggestions');
+  if (!filtered.length) { box.classList.remove('open'); return; }
+  box.innerHTML = filtered.map(p =>
+    `<div class="suggestion-item" onclick="selectSuggestion('${type}', ${p.lat}, ${p.lng}, '${p.name}', '${p.area}')">
+      <span class="sug-icon">📍</span>
+      <div><div class="sug-name">${p.name}</div><div class="sug-area">${p.area}</div></div>
+    </div>`
+  ).join('');
+  box.classList.add('open');
+}
+
+function selectSuggestion(type, lat, lng, name, area) {
+  const input = document.getElementById(type + 'Input');
+  input.value = name + (area ? ', ' + area : '');
+  document.getElementById(type + 'Suggestions').classList.remove('open');
+  document.getElementById(type + 'Clear').classList.add('visible');
+  setMarker(type, parseFloat(lat), parseFloat(lng), name);
+}
+
+function setPlace(placeName, type) {
+  document.getElementById(type + 'Input').value = placeName;
+  searchLocation(placeName, type);
+  // Also trigger search immediately
+  setTimeout(() => searchLocation(placeName, type), 100);
+}
+
+// =====================
+// REVERSE GEOCODE (map click → address)
+// =====================
+async function reverseGeocode(lat, lng, type) {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const name = data.address.road || data.address.suburb || data.address.city || 'Mahali uliochagua';
+    document.getElementById(type + 'Input').value = name;
+    document.getElementById(type + 'Clear').classList.add('visible');
+  } catch(e) {
+    document.getElementById(type + 'Input').value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
+}
+
+// =====================
+// MY LOCATION (GPS)
+// =====================
+function getMyLocation() {
+  if (!navigator.geolocation) { alert('Simu yako haisaidii GPS.'); return; }
+  const btn = document.getElementById('myLocBtn');
+  const spinner = document.getElementById('locSpinner');
+  const txt = document.getElementById('myLocText');
+  spinner.style.display = 'block';
+  txt.textContent = 'Inatafuta mahali pako...';
+  btn.disabled = true;
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const { latitude: lat, longitude: lng } = pos.coords;
+      setMarker('pickup', lat, lng, 'Mahali Nilipo');
+      reverseGeocode(lat, lng, 'pickup');
+      spinner.style.display = 'none';
+      txt.textContent = '✅ Mahali Palipowekwa!';
+      setTimeout(() => { txt.textContent = 'Tumia Mahali Nilipo Sasa (GPS)'; btn.disabled = false; }, 2000);
+    },
+    err => {
+      spinner.style.display = 'none';
+      txt.textContent = 'Tumia Mahali Nilipo Sasa (GPS)';
+      btn.disabled = false;
+      alert('Imeshindwa kupata mahali pako. Tafadhali wezesha GPS kwenye simu yako.');
+    },
+    { timeout: 10000, enableHighAccuracy: true }
+  );
+}
+
+// =====================
+// CLEAR INPUT
+// =====================
+function clearInput(type) {
+  document.getElementById(type + 'Input').value = '';
+  document.getElementById(type + 'Clear').classList.remove('visible');
+  document.getElementById(type + 'Suggestions').classList.remove('open');
+  if (type === 'pickup') {
+    if (pickupMarker) map.removeLayer(pickupMarker);
+    pickupMarker = null; pickupCoords = null;
+  } else {
+    if (dropoffMarker) map.removeLayer(dropoffMarker);
+    dropoffMarker = null; dropoffCoords = null;
+  }
+  if (routeLine) { map.removeLayer(routeLine); routeLine = null; }
+  document.getElementById('fareBox').classList.remove('visible');
+  updateConfirmButton();
+}
+
+// =====================
+// SWAP LOCATIONS
+// =====================
+function swapLocations() {
+  const pi = document.getElementById('pickupInput');
+  const di = document.getElementById('dropoffInput');
+  const tmp = pi.value; pi.value = di.value; di.value = tmp;
+  const tmpC = pickupCoords; pickupCoords = dropoffCoords; dropoffCoords = tmpC;
+  const tmpM = pickupMarker; pickupMarker = dropoffMarker; dropoffMarker = tmpM;
+  if (pickupMarker) pickupMarker.setIcon(greenIcon());
+  if (dropoffMarker) dropoffMarker.setIcon(redIcon());
+  if (pickupCoords && dropoffCoords) { drawRoute(); calculateFare(); }
+  updateConfirmButton();
+}
+
+// =====================
+// CALCULATE FARE
+// =====================
+function calculateFare() {
+  if (!pickupCoords || !dropoffCoords) return;
+  const dist = haversineKm(pickupCoords.lat, pickupCoords.lng, dropoffCoords.lat, dropoffCoords.lng);
+  const baseFare = 1000;
+  const perKm = 800;
+  let multiplier = selectedService === 'premium' ? 1.3 : selectedService === 'economy' ? 0.8 : 1.0;
+  if (currentTab === 'parcel') multiplier *= 1.1;
+  if (currentTab === 'express') multiplier *= 1.5;
+  let fare = Math.round((baseFare + dist * perKm) * multiplier / 100) * 100;
+  fare = Math.max(fare, 1000);
+  const timeMin = Math.round(dist * 3 + 5);
+  document.getElementById('fareDistance').textContent = dist.toFixed(1) + ' km';
+  document.getElementById('fareTime').textContent = timeMin + ' dakika';
+  document.getElementById('fareService').textContent = currentTab === 'ride' ? selectedService.charAt(0).toUpperCase() + selectedService.slice(1) : currentTab.charAt(0).toUpperCase() + currentTab.slice(1);
+  document.getElementById('fareTotal').textContent = 'TSh ' + fare.toLocaleString();
+  document.getElementById('fareBox').classList.add('visible');
+  return fare;
+}
+
+function haversineKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// =====================
+// SERVICE TYPE SELECT
+// =====================
+function selectService(type) {
+  selectedService = type;
+  ['ride','economy','premium'].forEach(t => document.getElementById('svc-'+t).classList.remove('selected'));
+  document.getElementById('svc-'+type).classList.add('selected');
+  if (pickupCoords && dropoffCoords) calculateFare();
+}
+
+// =====================
+// TAB SWITCH
+// =====================
+function switchTab(tab) {
+  currentTab = tab;
+  ['ride','parcel','express'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('active', t === tab);
+  });
+  document.getElementById('parcelExtras').classList.toggle('show', tab === 'parcel');
+  document.getElementById('serviceTypeSection').style.display = tab === 'parcel' ? 'none' : 'block';
+  const btn = document.getElementById('confirmBtn');
+  const icons = { ride: '🛵', parcel: '📦', express: '⚡' };
+  if (pickupCoords && dropoffCoords) {
+    calculateFare();
+    btn.disabled = false;
+    document.getElementById('confirmBtnText').textContent = icons[tab] + ' Thibitisha Ombi';
+  }
+}
+
+// =====================
+// UPDATE CONFIRM BUTTON
+// =====================
+function updateConfirmButton() {
+  const btn = document.getElementById('confirmBtn');
+  const waBtn = document.getElementById('waOrderBtn');
+  const icons = { ride: '🛵', parcel: '📦', express: '⚡' };
+  if (pickupCoords && dropoffCoords) {
+    btn.disabled = false;
+    document.getElementById('confirmBtnText').textContent = icons[currentTab] + ' Thibitisha Ombi';
+    waBtn.style.display = 'flex';
+  } else {
+    btn.disabled = true;
+    document.getElementById('confirmBtnText').textContent = 'Weka Pickup na Dropoff Kwanza';
+    waBtn.style.display = 'none';
+  }
+}
+
+// =====================
+// CONFIRM BOOKING
+// =====================
+function confirmBooking() {
+  if (!pickupCoords || !dropoffCoords) return;
+  const orderId = 'CHP-' + Math.floor(Math.random() * 9000 + 1000);
+  document.getElementById('orderIdDisplay').textContent = 'Order #' + orderId;
+  document.getElementById('successModal').classList.add('open');
+  // Also send via WhatsApp
+  sendWhatsApp(orderId);
+}
+
+function sendWhatsApp(orderId) {
+  if (!pickupCoords || !dropoffCoords) return;
+  const pickup = document.getElementById('pickupInput').value;
+  const dropoff = document.getElementById('dropoffInput').value;
+  const fareEl = document.getElementById('fareTotal').textContent;
+  const distEl = document.getElementById('fareDistance').textContent;
+  const tab = currentTab === 'ride' ? '🛵 Bodaboda Ride' : currentTab === 'parcel' ? '📦 Parcel Delivery' : '⚡ Express Courier';
+  const id = orderId || 'CHP-' + Math.floor(Math.random() * 9000 + 1000);
+
+  let msg = `🛵 *OMBI JIPYA - CHAPDEL LOGISTICS*\n\n`;
+  msg += `📋 *Order ID:* ${id}\n`;
+  msg += `📌 *Huduma:* ${tab}\n\n`;
+  msg += `📍 *Pickup:* ${pickup}\n`;
+  msg += `🏁 *Dropoff:* ${dropoff}\n\n`;
+  msg += `📏 *Umbali:* ${distEl}\n`;
+  msg += `💰 *Bei:* ${fareEl}\n\n`;
+
+  if (currentTab === 'parcel') {
+    const recipient = document.getElementById('recipientName').value;
+    const phone = document.getElementById('recipientPhone').value;
+    const ptype = document.getElementById('parcelType').value;
+    if (recipient) msg += `👤 *Mpokeaji:* ${recipient}\n`;
+    if (phone) msg += `📞 *Namba:* ${phone}\n`;
+    if (ptype) msg += `📦 *Aina:* ${ptype}\n\n`;
+  }
+
+  msg += `⏰ *Wakati:* ${new Date().toLocaleString('sw-TZ')}\n\n`;
+  msg += `_Tafadhali thibitisha na kutuma dereva haraka!_ 🙏`;
+
+  const url = `https://wa.me/255762503883?text=${encodeURIComponent(msg)}`;
+  window.open(url, '_blank');
+}
+
+function closeModal() {
+  document.getElementById('successModal').classList.remove('open');
+}
+
+// Close suggestions when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('.location-box')) {
+    document.querySelectorAll('.suggestions').forEach(s => s.classList.remove('open'));
+  }
+});
+
+// Init
+window.addEventListener('load', initMap);
+</script>
+</body>
+</html>
