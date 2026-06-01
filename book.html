@@ -427,7 +427,9 @@ function showSug(res, t) {
   var html = '';
   for (var i=0; i<res.length; i++) {
     var r = res[i];
-    html += '<div class="sug-item" onclick="pickSug(''+t+'','+r.lat+','+r.lng+',''+r.name.replace(/'/g,'&#39;')+'',''+r.area.replace(/'/g,'&#39;')+'')"><span>&#x1F4CD;</span><div><div class="sug-name">'+r.name+'</div><div class="sug-area">'+r.area+'</div></div></div>';
+    var safeName = r.name.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    var safeArea = r.area.replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+    html += '<div class="sug-item" onclick="pickSug(&quot;'+t+'&quot;,'+r.lat+','+r.lng+',&quot;'+safeName+'&quot;,&quot;'+safeArea+'&quot;)"><span>&#x1F4CD;</span><div><div class="sug-name">'+r.name+'</div><div class="sug-area">'+r.area+'</div></div></div>';
   }
   box.innerHTML = html;
   box.classList.add('open');
@@ -512,31 +514,102 @@ function haversine(la1,lo1,la2,lo2) {
 }
 
 function pickSvc(s) {
-  curSvc=s; ['ride','bajaji','premium'].forEach(function(t){var e=document.getElementById('svc-'+t);if(e)e.className='svc-card'+(t===s?' sel':'');});
-  var d=document.getElementById('svcDesc');
-  var ds={ride:'&#x1F6F5; <strong>Bodaboda</strong> — Haraka, mitaani na msongamano. <strong>TSh 500/km</strong>',bajaji:'&#x1F6FA; <strong>Bajaji</strong> — Nafasi zaidi, familia. <strong>TSh 700/km</strong>',premium:'&#x2B50; <strong>Premium</strong> — Dereva bora zaidi. <strong>TSh 600/km</strong>'};
-  if(d) d.innerHTML=ds[s]||ds.ride;
-  if(pickC&&dropC) calcFare();
+  curSvc = s;
+  var types = ['ride','bajaji','premium'];
+  for (var i=0; i<types.length; i++) {
+    var el = document.getElementById('svc-'+types[i]);
+    if (el) {
+      if (types[i] === s) {
+        el.style.border = '2px solid #00b140';
+        el.style.background = '#f0fff4';
+      } else {
+        el.style.border = '2px solid #e0e0e0';
+        el.style.background = '#fff';
+      }
+    }
+  }
+  var d = document.getElementById('svcDesc');
+  if (d) {
+    if (s === 'bajaji') d.innerHTML = '&#x1F6FA; <strong>Bajaji</strong> &mdash; Nafasi zaidi, familia na mizigo midogo. <strong>TSh 700/km</strong>';
+    else if (s === 'premium') d.innerHTML = '&#x2B50; <strong>Premium</strong> &mdash; Dereva bora zaidi. <strong>TSh 600/km</strong>';
+    else d.innerHTML = '&#x1F6F5; <strong>Bodaboda</strong> &mdash; Haraka, inafaa mitaani na msongamano. <strong>TSh 500/km</strong>';
+  }
+  if (pickC && dropC) calcFare();
 }
 
 function pickPay(p) {
-  curPay=p; ['crdb','mpesa','cash'].forEach(function(t){var c=document.getElementById('pay-'+t),d=document.getElementById('pd-'+t);if(c)c.className='pay-card'+(t===p?' sel':'');if(d)d.className='pd pd-'+t+(t===p?' show':'');});
-  var lbl=document.getElementById('confirmTxt'),btn=document.getElementById('confirmBtn');
-  if(btn&&!btn.disabled){var ls={crdb:'Lipa CRDB na Thibitisha',mpesa:'Lipa M-Pesa na Thibitisha',cash:'Thibitisha Ombi'};if(lbl)lbl.textContent=ls[p]||ls.cash;}
+  curPay = p;
+  var pays = ['crdb','mpesa','cash'];
+  for (var i=0; i<pays.length; i++) {
+    var c = document.getElementById('pay-'+pays[i]);
+    var d = document.getElementById('pd-'+pays[i]);
+    if (c) {
+      if (pays[i] === p) {
+        c.style.border = '2px solid #00b140';
+        c.style.background = '#f0fff4';
+        c.style.transform = 'scale(1.03)';
+      } else {
+        c.style.border = '2px solid #e0e0e0';
+        c.style.background = '#fff';
+        c.style.transform = 'scale(1)';
+      }
+    }
+    if (d) d.style.display = (pays[i] === p) ? 'block' : 'none';
+  }
+  var btn = document.getElementById('confirmBtn');
+  var lbl = document.getElementById('confirmTxt');
+  if (btn && !btn.disabled && lbl) {
+    if (p === 'crdb') lbl.textContent = 'Lipa CRDB na Thibitisha';
+    else if (p === 'mpesa') lbl.textContent = 'Lipa M-Pesa na Thibitisha';
+    else lbl.textContent = 'Thibitisha Ombi';
+  }
 }
 
 function switchTab(t) {
-  curTab=t; ['ride','parcel','express'].forEach(function(x){document.getElementById('tab-'+x).className='tab'+(x===t?' active':'');});
-  document.getElementById('parcelForm').className='parcel-form'+(t==='parcel'?' show':'');
-  document.getElementById('svcSection').style.display=t==='parcel'?'none':'block';
+  curTab = t;
+  var tabs = ['ride','parcel','express'];
+  for (var i=0; i<tabs.length; i++) {
+    var el = document.getElementById('tab-'+tabs[i]);
+    if (el) {
+      if (tabs[i] === t) {
+        el.className = 'tab active';
+      } else {
+        el.className = 'tab';
+      }
+    }
+  }
+  var pf = document.getElementById('parcelForm');
+  var ss = document.getElementById('svcSection');
+  if (pf) pf.style.display = (t === 'parcel') ? 'block' : 'none';
+  if (ss) ss.style.display = (t === 'parcel') ? 'none' : 'block';
   updateBtn();
 }
 
 function updateBtn() {
-  var btn=document.getElementById('confirmBtn'),wa=document.getElementById('waBtn'),lbl=document.getElementById('confirmTxt');
-  var ok=pickC&&dropC; btn.disabled=!ok;
-  if(ok){var ls={crdb:'Lipa CRDB na Thibitisha',mpesa:'Lipa M-Pesa na Thibitisha',cash:'Thibitisha Ombi'};if(lbl)lbl.textContent=ls[curPay]||ls.cash;if(wa)wa.className='wa-btn show';}
-  else{if(lbl)lbl.textContent='Weka Pickup na Dropoff Kwanza';if(wa)wa.className='wa-btn';}
+  var btn = document.getElementById('confirmBtn');
+  var wa = document.getElementById('waBtn');
+  var lbl = document.getElementById('confirmTxt');
+  var ok = (pickC !== null) && (dropC !== null);
+  if (btn) btn.disabled = !ok;
+  if (ok) {
+    if (lbl) {
+      if (curPay === 'crdb') lbl.textContent = 'Lipa CRDB na Thibitisha';
+      else if (curPay === 'mpesa') lbl.textContent = 'Lipa M-Pesa na Thibitisha';
+      else lbl.textContent = 'Thibitisha Ombi';
+    }
+    if (btn) {
+      btn.style.background = '#00b140';
+      btn.style.cursor = 'pointer';
+    }
+    if (wa) { wa.style.display = 'flex'; }
+  } else {
+    if (lbl) lbl.textContent = 'Weka Pickup na Dropoff Kwanza';
+    if (btn) {
+      btn.style.background = '#ccc';
+      btn.style.cursor = 'not-allowed';
+    }
+    if (wa) { wa.style.display = 'none'; }
+  }
 }
 
 function doConfirm() {
