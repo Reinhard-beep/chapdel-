@@ -14,7 +14,7 @@
 <link rel="apple-touch-icon" href="icon-192.png"/>
 
 <!-- Leaflet CSS (Free OpenStreetMap) -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
 
@@ -238,8 +238,9 @@
     .map-container { height:500px; margin:16px 16px 16px 0; border-radius:20px; position:sticky; top:72px; }
   }
   /* Force light map tiles */
-  .leaflet-tile { filter: none !important; }
-  .leaflet-container { background: #f2efe9 !important; }
+  .leaflet-tile { filter: none !important; opacity: 1 !important; }
+  .leaflet-container { background: #e8f4e8 !important; }
+  .leaflet-tile-container { opacity: 1 !important; }
 </style>
 </head>
 <body>
@@ -574,7 +575,7 @@
 </div>
 
 <!-- Leaflet JS -->
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
 <script>
 // =====================
@@ -595,12 +596,27 @@ const DSM_CENTER = [-6.7924, 39.2083];
 function initMap() {
   map = L.map('map', { zoomControl: true, attributionControl: false }).setView(DSM_CENTER, 12);
 
-  // LIGHT map - white/normal OpenStreetMap
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  // Primary: OpenStreetMap tiles
+  const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
-    attribution: '© OpenStreetMap contributors',
-    crossOrigin: true
-  }).addTo(map);
+    attribution: '© OpenStreetMap',
+    subdomains: ['a','b','c'],
+    crossOrigin: ''
+  });
+
+  // Fallback: CartoDB Light (bright white map)
+  const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19,
+    attribution: '© CartoDB',
+    subdomains: ['a','b','c','d']
+  });
+
+  // Try OSM first, fallback to CartoDB Light
+  osmLayer.addTo(map);
+  osmLayer.on('tileerror', function() {
+    map.removeLayer(osmLayer);
+    cartoLight.addTo(map);
+  });
 
   // Coverage circles
   L.circle([-6.7924, 39.2083], { radius: 20000, color: '#00b140', fillColor: '#00b140', fillOpacity: 0.10, weight: 2, dashArray: '6 4' }).addTo(map);
@@ -1188,8 +1204,20 @@ document.addEventListener('click', e => {
   }
 });
 
-// Init
-window.addEventListener('load', initMap);
+// Init - wait for full load then invalidate size
+window.addEventListener('load', function() {
+  initMap();
+  // Force map to recalculate size after 500ms
+  setTimeout(function() {
+    if (map) {
+      map.invalidateSize(true);
+      map.setView([-6.7924, 39.2083], 12);
+    }
+  }, 500);
+  setTimeout(function() {
+    if (map) map.invalidateSize(true);
+  }, 1500);
+});
 </script>
 </body>
 </html>
