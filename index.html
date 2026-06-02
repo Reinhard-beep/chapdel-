@@ -163,6 +163,13 @@ footer a{color:var(--green);text-decoration:none;}
   .nav-btn{padding:6px 9px;font-size:0.74rem;}
 }
 </style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00e64d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Chapdel">
+<link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
 
@@ -544,6 +551,50 @@ function toast(msg){
 }
 
 updStats();
+</script>
+<div id="install-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#00e64d;color:#000;padding:14px 18px;align-items:center;gap:12px;z-index:9999;box-shadow:0 -4px 20px rgba(0,230,77,0.3);">
+  <img src="icon-192.png" style="width:42px;height:42px;border-radius:10px;flex-shrink:0;">
+  <div style="flex:1;">
+    <div style="font-weight:900;font-size:0.9rem;">📲 Install Chapdel App</div>
+    <div style="font-size:0.75rem;opacity:0.8;">Bonyeza kuinstall kwenye simu — BURE!</div>
+  </div>
+  <button onclick="installApp()" style="background:#000;color:#00e64d;border:none;padding:9px 18px;border-radius:8px;font-weight:900;font-size:0.85rem;cursor:pointer;flex-shrink:0;">Install</button>
+  <button onclick="document.getElementById('install-banner').style.display='none'" style="background:transparent;border:none;font-size:1.3rem;cursor:pointer;flex-shrink:0;">✕</button>
+</div>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('sw.js').then(function(reg){
+      console.log('SW registered');
+    }).catch(function(err){
+      console.log('SW error', err);
+    });
+  });
+}
+
+// PWA Install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('install-banner').style.display = 'flex';
+});
+
+function installApp() {
+  if(deferredPrompt) {
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((result) => {
+      if(result.outcome === 'accepted') {
+        document.getElementById('install-banner').style.display = 'none';
+      }
+      deferredPrompt = null;
+    });
+  }
+}
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').style.display = 'none';
+});
 </script>
 </body>
 </html>
