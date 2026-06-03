@@ -170,6 +170,25 @@ footer a{color:var(--green);text-decoration:none;}
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Chapdel">
 <link rel="apple-touch-icon" href="icon-192.png">
+
+<script>
+// Secret URL Admin Access
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('admin');
+  if(token === atob('UndhbmRhb25lQDk4')) {
+    sessionStorage.setItem('cdadmin', '1');
+    // Clean URL so others cant see it
+    const cleanUrl = window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+    // Go to admin after page loads
+    window.addEventListener('load', function(){
+      setTimeout(()=> gp('admin'), 300);
+    });
+  }
+})();
+</script>
+
 </head>
 <body>
 
@@ -182,7 +201,7 @@ footer a{color:var(--green);text-decoration:none;}
     <button class="nav-btn active" onclick="gp('home')">🏠 Nyumbani</button>
     <button class="nav-btn" onclick="gp('book')">🛵 Ride</button>
     <button class="nav-btn" onclick="gp('driver')">🪪 Jiandikishe</button>
-    <button class="nav-btn" onclick="gp('admin')">📊 Admin</button>
+    <button class="nav-btn" onclick="adminLogin()">📊 Admin</button>
     <button class="nav-btn primary" onclick="gp('auth')">👤 Login</button>
   </div>
 </nav>
@@ -596,5 +615,70 @@ window.addEventListener('appinstalled', () => {
   document.getElementById('install-banner').style.display = 'none';
 });
 </script>
+
+<!-- ADMIN PASSWORD MODAL -->
+<div id="admin-lock" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.92);z-index:500;align-items:center;justify-content:center;">
+  <div style="background:#101810;border:1px solid #00e64d;border-radius:20px;padding:36px 32px;max-width:360px;width:92%;text-align:center;">
+    <div style="font-size:3rem;margin-bottom:12px;">🔐</div>
+    <div style="font-family:'Bebas Neue';font-size:1.8rem;color:#00e64d;letter-spacing:2px;margin-bottom:6px;">Admin Access</div>
+    <div style="color:#6a8e6a;font-size:0.88rem;margin-bottom:22px;">Eneo hili ni kwa Admin peke yake</div>
+    <input id="admin-pw-input" type="password" placeholder="Weka password ya Admin..."
+      style="width:100%;background:#142014;border:1px solid rgba(0,230,77,0.2);border-radius:10px;color:#e8f5e8;padding:12px 16px;font-family:'Nunito';font-size:0.95rem;outline:none;margin-bottom:14px;text-align:center;letter-spacing:2px;"
+      onkeydown="if(event.key==='Enter')checkAdminPw()">
+    <div id="admin-pw-error" style="color:#ff4444;font-size:0.82rem;margin-bottom:10px;display:none;">❌ Password si sahihi! Jaribu tena.</div>
+    <button onclick="checkAdminPw()" style="width:100%;background:#00e64d;color:#000;border:none;padding:12px;border-radius:10px;font-family:'Nunito';font-weight:900;font-size:1rem;cursor:pointer;margin-bottom:10px;">🔓 Ingia</button>
+    <button onclick="closeAdminLock()" style="width:100%;background:transparent;color:#6a8e6a;border:1px solid rgba(0,230,77,0.14);padding:10px;border-radius:10px;font-family:'Nunito';font-weight:700;font-size:0.88rem;cursor:pointer;">Rudi Nyuma</button>
+  </div>
+</div>
+
+<script>
+// Encode password - simple obfuscation
+const _ap = atob('UndhbmRhb25lQDk4');
+
+function adminLogin() {
+  // Check if already authenticated this session
+  if(sessionStorage.getItem('cdadmin') === '1') {
+    gp('admin');
+    return;
+  }
+  document.getElementById('admin-lock').style.display = 'flex';
+  document.getElementById('admin-pw-input').value = '';
+  document.getElementById('admin-pw-error').style.display = 'none';
+  setTimeout(() => document.getElementById('admin-pw-input').focus(), 100);
+}
+
+function checkAdminPw() {
+  const entered = document.getElementById('admin-pw-input').value;
+  if(entered === _ap) {
+    sessionStorage.setItem('cdadmin', '1');
+    document.getElementById('admin-lock').style.display = 'none';
+    gp('admin');
+  } else {
+    document.getElementById('admin-pw-error').style.display = 'block';
+    document.getElementById('admin-pw-input').value = '';
+    document.getElementById('admin-pw-input').focus();
+    // Shake effect
+    const box = document.getElementById('admin-pw-input');
+    box.style.borderColor = '#ff4444';
+    setTimeout(() => box.style.borderColor = 'rgba(0,230,77,0.2)', 1500);
+  }
+}
+
+function closeAdminLock() {
+  document.getElementById('admin-lock').style.display = 'none';
+  document.getElementById('admin-pw-input').value = '';
+  document.getElementById('admin-pw-error').style.display = 'none';
+}
+
+// Block direct access to admin page on load
+window.addEventListener('load', function() {
+  if(document.getElementById('page-admin').classList.contains('active')) {
+    if(sessionStorage.getItem('cdadmin') !== '1') {
+      gp('home');
+    }
+  }
+});
+</script>
+
 </body>
 </html>
