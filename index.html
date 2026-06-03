@@ -289,10 +289,26 @@ window.addEventListener('DOMContentLoaded', function(){
         <div class="ride-type" id="rt-parcel" onclick="selType('parcel')"><div class="ic">📦</div><div class="nm">Parcel</div><div class="pr">700/km</div></div>
         <div class="ride-type" id="rt-express" onclick="selType('express')"><div class="ic">⚡</div><div class="nm">Express</div><div class="pr">700+/km</div></div>
       </div>
-      <div class="fg"><label>📍 Pickup</label><input class="fi" id="pickup" placeholder="Anwani yako..."></div>
-      <div class="fg"><label>🎯 Destination</label><input class="fi" id="dest" placeholder="Unakwenda wapi..."></div>
+      <div class="fg">
+        <label>📍 Pickup — Anwani yako</label>
+        <div style="position:relative;">
+          <input class="fi" id="pickup" placeholder="Andika au chagua mtaa..." oninput="filterAreas('pickup')" onfocus="showAreas('pickup')" autocomplete="off">
+          <div id="pickup-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:#142014;border:1px solid rgba(0,230,77,0.3);border-radius:0 0 10px 10px;z-index:50;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
+        </div>
+      </div>
+      <div class="fg">
+        <label>🎯 Destination — Unakwenda wapi</label>
+        <div style="position:relative;">
+          <input class="fi" id="dest" placeholder="Andika au chagua mtaa..." oninput="filterAreas('dest')" onfocus="showAreas('dest')" autocomplete="off">
+          <div id="dest-suggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:#142014;border:1px solid rgba(0,230,77,0.3);border-radius:0 0 10px 10px;z-index:50;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,0.5);"></div>
+        </div>
+      </div>
+      <div id="dist-calc-box" style="display:none;background:#142014;border:1px solid rgba(0,230,77,0.2);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+        <div id="dist-loading" style="display:none;color:#6a8e6a;font-size:0.88rem;">⏳ Inahesabu umbali...</div>
+        <div id="dist-result" style="display:none;color:#00e64d;font-weight:800;font-size:0.95rem;"></div>
+      </div>
       <div class="f2">
-        <div class="fg"><label>📏 Umbali (km)</label><input class="fi" id="dist" type="number" min="1" placeholder="e.g. 5" oninput="calcF()"></div>
+        <div class="fg"><label>📏 Umbali (km) — Auto</label><input class="fi" id="dist" type="number" min="1" placeholder="Itajaza automatically..." readonly style="background:#0d150d;cursor:not-allowed;color:#00e64d;font-weight:700;"></div>
         <div class="fg"><label>👤 Jina Lako</label><input class="fi" id="rname" placeholder="Jina kamili"></div>
       </div>
       <div class="fg"><label>📱 Simu</label><input class="fi" id="rphone" type="tel" placeholder="+255 7XX XXX XXX"></div>
@@ -682,6 +698,233 @@ window.addEventListener('load', function() {
       gp('home');
     }
   }
+});
+</script>
+
+
+<script>
+// ===== MAENEO YA DAR ES SALAAM & KIBAHA =====
+const MAENEO = [
+  // ===== KIBAHA =====
+  { name: "Kibaha Mji", lat: -6.7819, lon: 38.9221 },
+  { name: "Kibaha Sokoni", lat: -6.7832, lon: 38.9198 },
+  { name: "Kibaha Stendi", lat: -6.7845, lon: 38.9210 },
+  { name: "Kibaha Hospitali", lat: -6.7801, lon: 38.9235 },
+  { name: "Kibaha Shule ya Sekondari", lat: -6.7856, lon: 38.9188 },
+  { name: "Kibaha Maili Moja", lat: -6.7890, lon: 38.9156 },
+  { name: "Kibaha Mlandizi", lat: -6.8012, lon: 38.9034 },
+  { name: "Kibaha Sungura", lat: -6.7923, lon: 38.9267 },
+  { name: "Kibaha Chalinze", lat: -6.8234, lon: 38.8934 },
+  { name: "Kibaha Bomas", lat: -6.7867, lon: 38.9312 },
+  { name: "Kibaha Tumbi", lat: -6.7745, lon: 38.9289 },
+  { name: "Kibaha DC", lat: -6.7798, lon: 38.9223 },
+  { name: "Kibaha Mvuti", lat: -6.7934, lon: 38.9178 },
+  { name: "Kibaha Msagani", lat: -6.7712, lon: 38.9156 },
+  { name: "Kibaha Visiga", lat: -6.8056, lon: 38.9089 },
+
+  // ===== ILALA =====
+  { name: "Ilala Mnazi Mmoja", lat: -6.8160, lon: 39.2803 },
+  { name: "Ilala Kariakoo", lat: -6.8190, lon: 39.2750 },
+  { name: "Ilala Gerezani", lat: -6.8145, lon: 39.2890 },
+  { name: "Ilala Kisutu", lat: -6.8123, lon: 39.2867 },
+  { name: "Ilala Kivukoni", lat: -6.8089, lon: 39.2934 },
+  { name: "Ilala Posta", lat: -6.8134, lon: 39.2912 },
+  { name: "Ilala Jangwani", lat: -6.8212, lon: 39.2678 },
+  { name: "Ilala Buguruni", lat: -6.8334, lon: 39.2534 },
+  { name: "Ilala Tabata", lat: -6.8445, lon: 39.2456 },
+  { name: "Ilala Ukonga", lat: -6.8556, lon: 39.2234 },
+  { name: "Ilala Vingunguti", lat: -6.8423, lon: 39.2312 },
+  { name: "Ilala Kitunda", lat: -6.8623, lon: 39.2089 },
+  { name: "Ilala Segerea", lat: -6.8512, lon: 39.2167 },
+  { name: "Ilala Pugu", lat: -6.8734, lon: 39.1934 },
+  { name: "Ilala Msongola", lat: -6.8389, lon: 39.2389 },
+
+  // ===== KINONDONI =====
+  { name: "Kinondoni Mwenge", lat: -6.7712, lon: 39.2345 },
+  { name: "Kinondoni Mikocheni", lat: -6.7634, lon: 39.2456 },
+  { name: "Kinondoni Msasani", lat: -6.7512, lon: 39.2589 },
+  { name: "Kinondoni Masaki", lat: -6.7445, lon: 39.2712 },
+  { name: "Kinondoni Oyster Bay", lat: -6.7389, lon: 39.2823 },
+  { name: "Kinondoni Sinza", lat: -6.7823, lon: 39.2234 },
+  { name: "Kinondoni Ubungo", lat: -6.7934, lon: 39.2089 },
+  { name: "Kinondoni Manzese", lat: -6.8012, lon: 39.2123 },
+  { name: "Kinondoni Magomeni", lat: -6.7956, lon: 39.2267 },
+  { name: "Kinondoni Kijitonyama", lat: -6.7756, lon: 39.2312 },
+  { name: "Kinondoni Tandale", lat: -6.8056, lon: 39.2189 },
+  { name: "Kinondoni Makuburi", lat: -6.7889, lon: 39.2156 },
+  { name: "Kinondoni Kawe", lat: -6.7456, lon: 39.2234 },
+  { name: "Kinondoni Mbezi Beach", lat: -6.7234, lon: 39.2089 },
+  { name: "Kinondoni Mbezi Luis", lat: -6.7312, lon: 39.1956 },
+  { name: "Kinondoni Salasala", lat: -6.7134, lon: 39.1823 },
+  { name: "Kinondoni Bunju", lat: -6.6934, lon: 39.1734 },
+  { name: "Kinondoni Tegeta", lat: -6.6712, lon: 39.1589 },
+  { name: "Kinondoni Goba", lat: -6.7056, lon: 39.2012 },
+  { name: "Kinondoni Kimara", lat: -6.7845, lon: 39.1823 },
+  { name: "Kinondoni Kibamba", lat: -6.7623, lon: 39.1712 },
+  { name: "Kinondoni Mbagala", lat: -6.8734, lon: 39.2623 },
+
+  // ===== TEMEKE =====
+  { name: "Temeke Tandika", lat: -6.8534, lon: 39.2734 },
+  { name: "Temeke Chang'ombe", lat: -6.8445, lon: 39.2823 },
+  { name: "Temeke Kurasini", lat: -6.8356, lon: 39.2934 },
+  { name: "Temeke Mbagala", lat: -6.8623, lon: 39.2789 },
+  { name: "Temeke Kigamboni", lat: -6.8289, lon: 39.3234 },
+  { name: "Temeke Mjimwema", lat: -6.8412, lon: 39.3123 },
+  { name: "Temeke Kibonde Maji", lat: -6.8512, lon: 39.2889 },
+  { name: "Temeke Makangarawe", lat: -6.8689, lon: 39.2656 },
+  { name: "Temeke Yombo Vituka", lat: -6.8756, lon: 39.2512 },
+  { name: "Temeke Pemba Mnazi", lat: -6.8323, lon: 39.2967 },
+  { name: "Temeke Miburani", lat: -6.8267, lon: 39.3012 },
+  { name: "Temeke Azimio", lat: -6.8589, lon: 39.2712 },
+
+  // ===== UBUNGO =====
+  { name: "Ubungo Mji wa Samaki", lat: -6.7923, lon: 39.2034 },
+  { name: "Ubungo Stendi Kuu", lat: -6.7956, lon: 39.2056 },
+  { name: "Ubungo Morocco", lat: -6.7889, lon: 39.2167 },
+  { name: "Ubungo Makaza", lat: -6.7834, lon: 39.1934 },
+  { name: "Ubungo Banana", lat: -6.7812, lon: 39.1867 },
+  { name: "Ubungo Kwembe", lat: -6.7712, lon: 39.1756 },
+
+  // ===== KIGAMBONI =====
+  { name: "Kigamboni Mjimwema", lat: -6.8389, lon: 39.3189 },
+  { name: "Kigamboni Pembamnazi", lat: -6.8289, lon: 39.3267 },
+  { name: "Kigamboni Kibweni", lat: -6.8489, lon: 39.3312 },
+  { name: "Kigamboni Tungi", lat: -6.8589, lon: 39.3145 },
+  { name: "Kigamboni Somangila", lat: -6.8212, lon: 39.3334 },
+
+  // ===== MAENEO MAARUFU =====
+  { name: "JNIA Airport Dar es Salaam", lat: -6.8780, lon: 39.2026 },
+  { name: "Muhimbili Hospital", lat: -6.8056, lon: 39.2589 },
+  { name: "Aga Khan Hospital", lat: -6.7823, lon: 39.2623 },
+  { name: "Regency Medical Centre", lat: -6.7745, lon: 39.2534 },
+  { name: "Mlimani City Mall", lat: -6.7789, lon: 39.2267 },
+  { name: "Dar es Salaam University (UDSM)", lat: -6.7734, lon: 39.2345 },
+  { name: "University of Dar es Salaam", lat: -6.7712, lon: 39.2323 },
+  { name: "Ardhi University", lat: -6.7623, lon: 39.2412 },
+  { name: "Dar es Salaam Institute of Technology (DIT)", lat: -6.8012, lon: 39.2456 },
+  { name: "Bandari College", lat: -6.8145, lon: 39.2923 },
+  { name: "Harbour (Bandari)", lat: -6.8167, lon: 39.2956 },
+  { name: "Ferry Terminal Dar", lat: -6.8189, lon: 39.2934 },
+  { name: "Shoprite Mlimani", lat: -6.7812, lon: 39.2289 },
+  { name: "Game City Mall", lat: -6.8289, lon: 39.2423 },
+  { name: "Mwembe Chai", lat: -6.8156, lon: 39.2723 },
+  { name: "Posta Kuu Dar", lat: -6.8123, lon: 39.2901 },
+  { name: "TRA Dar es Salaam", lat: -6.8089, lon: 39.2845 },
+  { name: "Dar es Salaam City Centre", lat: -6.8161, lon: 39.2894 },
+];
+
+function filterAreas(field) {
+  const input = document.getElementById(field === 'pickup' ? 'pickup' : 'dest');
+  const query = input.value.toLowerCase().trim();
+  const sugBox = document.getElementById(field + '-suggestions');
+  
+  if(query.length < 1) { sugBox.style.display = 'none'; return; }
+  
+  const filtered = MAENEO.filter(m => m.name.toLowerCase().includes(query)).slice(0, 8);
+  
+  if(filtered.length === 0) {
+    sugBox.innerHTML = '<div style="padding:11px 14px;color:#6a8e6a;font-size:0.83rem;">Hakuna mtaa uliopo — jaribu jina lingine</div>';
+  } else {
+    sugBox.innerHTML = filtered.map(m => `
+      <div onclick="selectArea('${field}', '${m.name}', ${m.lat}, ${m.lon})"
+        style="padding:11px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid rgba(0,230,77,0.07);display:flex;align-items:center;gap:8px;"
+        onmouseover="this.style.background='rgba(0,230,77,0.08)'"
+        onmouseout="this.style.background='transparent'">
+        <span style="color:#00e64d;">📍</span> <span>${m.name}</span>
+      </div>`).join('');
+  }
+  sugBox.style.display = 'block';
+}
+
+function showAreas(field) {
+  const input = document.getElementById(field === 'pickup' ? 'pickup' : 'dest');
+  if(input.value.length < 1) {
+    // Show popular areas
+    const popular = MAENEO.slice(0, 8);
+    const sugBox = document.getElementById(field + '-suggestions');
+    sugBox.innerHTML = '<div style="padding:8px 14px;font-size:0.75rem;color:#6a8e6a;text-transform:uppercase;letter-spacing:1px;">Maeneo Maarufu</div>' +
+      popular.map(m => `
+        <div onclick="selectArea('${field}', '${m.name}', ${m.lat}, ${m.lon})"
+          style="padding:11px 14px;cursor:pointer;font-size:0.85rem;border-bottom:1px solid rgba(0,230,77,0.07);display:flex;align-items:center;gap:8px;"
+          onmouseover="this.style.background='rgba(0,230,77,0.08)'"
+          onmouseout="this.style.background='transparent'">
+          <span style="color:#00e64d;">📍</span> <span>${m.name}</span>
+        </div>`).join('');
+    sugBox.style.display = 'block';
+  }
+}
+
+function selectArea(field, name, lat, lon) {
+  const input = document.getElementById(field === 'pickup' ? 'pickup' : 'dest');
+  input.value = name;
+  document.getElementById(field + '-suggestions').style.display = 'none';
+  
+  if(field === 'pickup') {
+    pickupCoords = { lat: parseFloat(lat), lon: parseFloat(lon) };
+  } else {
+    destCoords = { lat: parseFloat(lat), lon: parseFloat(lon) };
+  }
+  
+  if(pickupCoords && destCoords) calcDistance();
+}
+
+let pickupCoords = null;
+let destCoords = null;
+
+async function calcDistance() {
+  const loading = document.getElementById('dist-loading');
+  const result = document.getElementById('dist-result');
+  const distBox = document.getElementById('dist-calc-box');
+  
+  distBox.style.display = 'flex';
+  loading.style.display = 'block';
+  result.style.display = 'none';
+  
+  try {
+    const url = `https://router.project-osrm.org/route/v1/driving/${pickupCoords.lon},${pickupCoords.lat};${destCoords.lon},${destCoords.lat}?overview=false`;
+    const res = await fetch(url);
+    const data = await res.json();
+    
+    if(data.code === 'Ok' && data.routes.length > 0) {
+      const meters = data.routes[0].distance;
+      const km = Math.ceil(meters / 1000);
+      const mins = Math.ceil(data.routes[0].duration / 60);
+      const fare = km * 700 + (rideType === 'express' ? 1000 : 0);
+      
+      document.getElementById('dist').value = km;
+      loading.style.display = 'none';
+      result.style.display = 'block';
+      result.innerHTML = `✅ <strong>${km} km</strong> &nbsp;|&nbsp; ⏱️ ~${mins} dak &nbsp;|&nbsp; 💰 TSh <strong>${fare.toLocaleString()}</strong>`;
+      calcF();
+    } else {
+      throw new Error('Route not found');
+    }
+  } catch(e) {
+    const km = haversine(pickupCoords.lat, pickupCoords.lon, destCoords.lat, destCoords.lon);
+    document.getElementById('dist').value = km;
+    const fare = km * 700 + (rideType === 'express' ? 1000 : 0);
+    loading.style.display = 'none';
+    result.style.display = 'block';
+    result.innerHTML = `📏 <strong>${km} km</strong> (wastani) &nbsp;|&nbsp; 💰 TSh <strong>${fare.toLocaleString()}</strong>`;
+    calcF();
+  }
+}
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLon = (lon2-lon1)*Math.PI/180;
+  const a = Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+  return Math.ceil(R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a)));
+}
+
+// Close suggestions on outside click
+document.addEventListener('click', function(e) {
+  ['pickup-suggestions','dest-suggestions'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el && !el.parentElement.contains(e.target)) el.style.display = 'none';
+  });
+});
 });
 </script>
 
