@@ -182,6 +182,7 @@ footer a{color:var(--green);text-decoration:none;}
     const cleanUrl = window.location.pathname;
     window.history.replaceState({}, document.title, cleanUrl);
     // Go to admin after page loads
+    document.getElementById('admin-nav-btn').style.display='inline-block';
     window.addEventListener('load', function(){
       setTimeout(()=> gp('admin'), 300);
     });
@@ -201,7 +202,7 @@ footer a{color:var(--green);text-decoration:none;}
     <button class="nav-btn active" onclick="gp('home')">🏠 Nyumbani</button>
     <button class="nav-btn" onclick="gp('book')">🛵 Ride</button>
     <button class="nav-btn" onclick="gp('driver')">🪪 Jiandikishe</button>
-    <button class="nav-btn" onclick="adminLogin()">📊 Admin</button>
+    <button class="nav-btn" id="admin-nav-btn" style="display:none;" onclick="adminLogin()">📊 Admin</button>
     <button class="nav-btn primary" onclick="gp('auth')">👤 Login</button>
   </div>
 </nav>
